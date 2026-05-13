@@ -17,7 +17,7 @@ namespace Task_Manager_Care.Models
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public string AssignedTo { get; set; } // User assigned to the task (Employee's name or ID)
-        public string Created_On { get; set; } // Date and time when the task was created
+        public DateTime Created_On { get; set; } // Date and time when the task was created
 
         public int StatusId { get; set; } // "Pending", "In Progress", "Completed"
         //Navigation property - EF Core to load
@@ -25,7 +25,7 @@ namespace Task_Manager_Care.Models
 
         public string task_Description { get; set; }
 
-        public string DueDate { get; set; } // Date by which the task should be completed
+        public DateTime DueDate { get; set; } // Date by which the task should be completed
         public string CreatedBy { get; set; } // User who created the task (name)
 
         //these 3 of them are for the service category, which is a foreign key to the ServiceCategory model,
