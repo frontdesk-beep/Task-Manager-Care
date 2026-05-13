@@ -17,7 +17,7 @@ namespace Task_Manager_Care.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ServiceCategory>().HasData(
-                new ServiceCategory { Id = 1, Name = "Investment" },
+                new ServiceCategory { Id = 1, Name = "Investments" },
                 new ServiceCategory { Id = 2, Name = "Insurance" },
                 new ServiceCategory { Id = 3, Name = "Tax" },
                 new ServiceCategory { Id = 4, Name = "Real Estate" },
@@ -34,6 +34,7 @@ namespace Task_Manager_Care.Data
                 new Status { Id = 2, Name = "In Progress" },
                 new Status { Id = 3, Name = "Completed" }
              );
+
         }
     }
 }
