@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Models;
 
@@ -9,6 +10,8 @@ namespace Task_Manager_Care.Controllers
     [ApiController]
     public class TasksController : ControllerBase
     {
+        //Contollerbase - bcoz of building apis
+        //Database connection to sql db
         private readonly AppDbContext _context;
 
             public TasksController(AppDbContext context)
@@ -20,6 +23,7 @@ namespace Task_Manager_Care.Controllers
             [HttpGet]
             public async Task<ActionResult<IEnumerable<TaskItem>>> GetTasks()
             {
+            //this EF Core converts this into SQL.- getting all data from TASKS model , here task is a collection
                 var tasks = await _context.Tasks.ToListAsync();
 
                 return Ok(tasks);
@@ -39,7 +43,7 @@ namespace Task_Manager_Care.Controllers
                 return Ok(task);
             }
 
-            // CREATE TASK
+            // CREATE TASK - create a object of the mdoel bcoz we have to send the repsonse body of taskItem model
             [HttpPost]
             public async Task<ActionResult<TaskItem>> CreateTask(TaskItem task)
             {

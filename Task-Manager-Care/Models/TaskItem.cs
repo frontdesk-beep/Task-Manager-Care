@@ -11,9 +11,11 @@ namespace Task_Manager_Care.Models
 
         //2 Categories: "New Client" and "Existing Client".
         //This helps in categorizing tasks based on the client's status, allowing for tailored approaches in task management and client interactions.
-        public int ClientId { get; set; } // Foreign key to User (Client)   
         //Navigation property - EF Core to load
-        public ClientCategory ClientCategory { get; set; }
+        public int ClientCategoryId { get; set; } // Foreign key to ClientCategory
+        public ClientCategory? ClientCategory { get; set; }
+
+
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public string AssignedTo { get; set; } // User assigned to the task (Employee's name or ID)
@@ -21,7 +23,7 @@ namespace Task_Manager_Care.Models
 
         public int StatusId { get; set; } // "Pending", "In Progress", "Completed"
         //Navigation property - EF Core to load
-        public Status Status { get; set; } // Navigation property to Status
+        public Status? Status { get; set; } // Navigation property to Status
 
         public string task_Description { get; set; }
 
@@ -32,7 +34,7 @@ namespace Task_Manager_Care.Models
         //allowing us to categorize tasks based on the type of service they are related to.
         public int ServiceCategoryId { get; set; } // Foreign key to ServiceCategory
 
-        //Navigation property - EF Core to load
-        public ServiceCategory ServiceCategory { get; set; } // Navigation property to ServiceCategory
+        //Navigation property - EF Core to load - ? - for accepting nullable values also
+        public ServiceCategory? ServiceCategory { get; set; } // Navigation property to ServiceCategory
     }
 }

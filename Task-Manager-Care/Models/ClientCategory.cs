@@ -3,6 +3,6 @@
     public class ClientCategory
     {
         public int Id { get; set; }
-        public  required string client_type { get; set; }
+        public  string ClientType { get; set; }
     }
 }

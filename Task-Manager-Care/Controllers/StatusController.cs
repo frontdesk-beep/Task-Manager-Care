@@ -1,8 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.Models;
+
 
 namespace Task_Manager_Care.Controllers
 {
+    [Route("api/[controller]")]
+    [ApiController]
     public class StatusController : Controller
     {
         private readonly AppDbContext _context;
@@ -10,9 +15,12 @@ namespace Task_Manager_Care.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Status>>> GetStatuses()
         {
-            return View();
+            var statuses = await _context.Statuses.ToListAsync();
+            return Ok(statuses);
         }
     }
 }

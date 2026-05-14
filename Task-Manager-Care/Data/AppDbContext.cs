@@ -14,6 +14,7 @@ namespace Task_Manager_Care.Data
         public DbSet<TaskItem> Tasks { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<ClientCategory> ClientCategories { get; set; }
+        public DbSet<Status> Statuses { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ServiceCategory>().HasData(
@@ -26,8 +27,8 @@ namespace Task_Manager_Care.Data
                 new ServiceCategory { Id = 7, Name = "Financial Planners" }
             );
             modelBuilder.Entity<ClientCategory>().HasData(
-                new ClientCategory { Id = 1, client_type = "Existing Client" },
-                new ClientCategory { Id = 2, client_type = "New Client" }
+                new ClientCategory { Id = 1, ClientType = "Existing Client" },
+                new ClientCategory { Id = 2, ClientType = "New Client" }
             );               
              modelBuilder.Entity<Status>().HasData(
                 new Status { Id = 1, Name = "Pending" },
