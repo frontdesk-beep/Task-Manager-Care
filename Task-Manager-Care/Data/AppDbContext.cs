@@ -9,6 +9,7 @@ namespace Task_Manager_Care.Data
             : base(options)
         {
         }
+
         //Models
         public DbSet<User> Users { get; set; }
         public DbSet<TaskItem> Tasks { get; set; }
@@ -28,14 +29,33 @@ namespace Task_Manager_Care.Data
             );
             modelBuilder.Entity<ClientCategory>().HasData(
                 new ClientCategory { Id = 1, ClientType = "Existing Client" },
-                new ClientCategory { Id = 2, ClientType = "New Client" }
-            );               
-             modelBuilder.Entity<Status>().HasData(
-                new Status { Id = 1, Name = "Pending" },
-                new Status { Id = 2, Name = "In Progress" },
-                new Status { Id = 3, Name = "Completed" }
-             );
+                new ClientCategory { Id = 2, ClientType = "New Client" },
+                new ClientCategory { Id = 3, ClientType = "Not Sure"} // for now - for new employees
+            );
+            modelBuilder.Entity<Status>().HasData(
+               new Status { Id = 1, Name = "Pending" },
+               new Status { Id = 2, Name = "In Progress" },
+               new Status { Id = 3, Name = "Completed" },
+               new Status { Id = 4, Name = "Reopened" }
+            );
+            modelBuilder.Entity<Priority>().HasData( 
+                new Priority { Id = 1, Name = "Low" },
+                new Priority { Id = 2, Name = "Medium" },
+                new Priority { Id = 3, Name = "High" }
+            );
+            //To restrict someone if by mistake if they delete the employee and they have assigned too many
+            //tasks so the data will be lost to stop that use the restrict behaviour
 
+            modelBuilder.Entity<TaskItem>()
+                .HasOne(t => t.CreatedBy)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TaskItem>()
+                .HasOne(t=>t.AssignedTo)
+                .WithMany()
+                .HasForeignKey(t=>t.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

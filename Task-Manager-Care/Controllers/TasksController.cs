@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Task_Manager_Care.Data;
@@ -8,6 +10,7 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // This will ensure that all endpoints in this controller require authentication
     public class TasksController : ControllerBase
     {
         //Contollerbase - bcoz of building apis

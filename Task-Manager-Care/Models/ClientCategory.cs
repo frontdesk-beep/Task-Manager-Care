@@ -1,8 +1,10 @@
-﻿namespace Task_Manager_Care.Models
+﻿
+namespace Task_Manager_Care.Models
 {
     public class ClientCategory
     {
-        public int Id { get; set; }
-        public  string ClientType { get; set; }
+        
+        public required int Id { get; set; }
+        public required string ClientType { get; set; }
     }
 }

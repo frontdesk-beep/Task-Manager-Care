@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Task_Manager_Care.Data;
 
@@ -11,9 +12,11 @@ using Task_Manager_Care.Data;
 namespace Task_Manager_Care.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260515151526_updateValidations")]
+    partial class updateValidations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,45 +51,6 @@ namespace Task_Manager_Care.Migrations
                         {
                             Id = 2,
                             ClientType = "New Client"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            ClientType = "Not Sure"
-                        });
-                });
-
-            modelBuilder.Entity("Task_Manager_Care.Models.Priority", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Priority");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Low"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Medium"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "High"
                         });
                 });
 
@@ -175,11 +139,6 @@ namespace Task_Manager_Care.Migrations
                         {
                             Id = 3,
                             Name = "Completed"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Reopened"
                         });
                 });
 
@@ -191,8 +150,10 @@ namespace Task_Manager_Care.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AssignedToId")
-                        .HasColumnType("int");
+                    b.Property<string>("AssignedTo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("ClientCategoryId")
                         .HasColumnType("int");
@@ -202,8 +163,9 @@ namespace Task_Manager_Care.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Created_On")
                         .HasColumnType("datetime2");
@@ -220,13 +182,6 @@ namespace Task_Manager_Care.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PriorityId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ServiceCategoryId")
                         .HasColumnType("int");
 
@@ -240,13 +195,7 @@ namespace Task_Manager_Care.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedToId");
-
                     b.HasIndex("ClientCategoryId");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("PriorityId");
 
                     b.HasIndex("ServiceCategoryId");
 
@@ -275,12 +224,6 @@ namespace Task_Manager_Care.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("OtpCode")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("OtpExpiry")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -298,27 +241,9 @@ namespace Task_Manager_Care.Migrations
 
             modelBuilder.Entity("Task_Manager_Care.Models.TaskItem", b =>
                 {
-                    b.HasOne("Task_Manager_Care.Models.User", "AssignedTo")
-                        .WithMany()
-                        .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Task_Manager_Care.Models.ClientCategory", "ClientCategory")
                         .WithMany()
                         .HasForeignKey("ClientCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Task_Manager_Care.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Task_Manager_Care.Models.Priority", "PriorityNavigation")
-                        .WithMany()
-                        .HasForeignKey("PriorityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -334,13 +259,7 @@ namespace Task_Manager_Care.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AssignedTo");
-
                     b.Navigation("ClientCategory");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("PriorityNavigation");
 
                     b.Navigation("ServiceCategory");
 
