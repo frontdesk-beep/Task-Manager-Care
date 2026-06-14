@@ -34,34 +34,71 @@ namespace Task_Manager_Care.Controllers
 
         //Update user
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(
+ int id,
+ User user
+)
         {
-            if (id != user.Id)
+            var existing =
+                await _context.Users
+                .FindAsync(id);
+
+            if (existing == null)
             {
-                return BadRequest();
+                return NotFound();
             }
-            _context.Entry(user).State = EntityState.Modified;
+
+            existing.Name =
+                user.Name;
+
+            existing.Email =
+                user.Email;
+
+            existing.Role =
+                user.Role;
+
+            // update password only if entered
+            if (!string.IsNullOrEmpty(user.Password))
+            {
+                existing.Password =
+                    user.Password;
+            }
+
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(existing);
         }
-
         //Delete user
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
 
-            if (user != null)
-            {
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
-            else
+            if (user == null)
             {
                 return NotFound();
             }
+
+            // Check if user has any incomplete tasks (created or assigned)
+            var incompleteTasks = await _context.Tasks
+                .Where(t => (t.CreatedById == id || t.AssignedToId == id) && t.StatusId != 3) // 3 = "Completed"
+                .ToListAsync();
+
+            if (incompleteTasks.Count > 0)
+            {
+                return BadRequest(new
+                {
+                    message = $"Cannot delete user. They have {incompleteTasks.Count} incomplete task(s). All tasks must be completed before deletion.",
+                    taskCount = incompleteTasks.Count,
+                    tasks = incompleteTasks.Select(t => new { t.Id, t.ClientName, t.StatusId })
+                });
+            }
+
+            // All tasks completed, safe to delete
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 
 namespace Task_Manager_Care.Models
@@ -10,7 +10,7 @@ namespace Task_Manager_Care.Models
         public int Id { get; set; }
         [Required]
         [StringLength(100)]
-        public string ClientName { get; set; }
+        public string? ClientName { get; set; }
 
 
         //2 Categories: "New Client" and "Existing Client".
@@ -21,11 +21,11 @@ namespace Task_Manager_Care.Models
 
         [Required]
         [StringLength(100)]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required]
         public int AssignedToId { get; set; } // User assigned to the task (Employee's name or ID)
@@ -33,7 +33,9 @@ namespace Task_Manager_Care.Models
 
         [Required]
         [DataType(DataType.DateTime)]
+        [JsonPropertyName("createdOn")]
         public DateTime Created_On { get; set; } // Date and time when the task was created
+        public DateTime? Updated_On { get; set; } // Date and time when the task was last updated (nullable for new tasks)
 
         public int StatusId { get; set; } // "Pending", "In Progress", "Completed"
         //Navigation property - EF Core to load
@@ -41,10 +43,9 @@ namespace Task_Manager_Care.Models
 
         [Required]
         [StringLength(500)]
-        public string task_Description { get; set; }
-
-        [Required]
-        public string Priority { get; set; }
+        [JsonPropertyName("task_Description")]
+        public string? task_Description { get; set; }
+        public string? LongDescription { get; set; } // Additional notes or comments about the task
 
         [Required]
         public DateTime DueDate { get; set; } // Date by which the task should be completed
@@ -61,7 +62,10 @@ namespace Task_Manager_Care.Models
         public ServiceCategory? ServiceCategory { get; set; } // Navigation property to ServiceCategory
 
         //Priorities
+        [Required]
         public int PriorityId { get; set; } // Foreign key to Priority
         public Priority? PriorityNavigation { get; set; } // Navigation property to Priority
+
+        public List<CommentEntity>? Comments { get; set; } // Navigation property to Comments (one-to-many relationship)
     }
 }

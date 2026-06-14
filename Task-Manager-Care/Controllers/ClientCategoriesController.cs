@@ -18,9 +18,14 @@ namespace Task_Manager_Care.Controllers
 
         //GET ALL CLIENT CATEGORIES
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ClientCategory>>> GetClientCategories()
+        public ActionResult GetClientCategories()
         {
-            var clientCategories = await _context.ClientCategories.ToListAsync();
+        //hardcoded array from backend
+            var clientCategories = new[]
+            {
+                new  { Id = 1, Name = "New Client" },
+                new  { Id = 2, Name = "Existing Client" },
+            };
             return Ok(clientCategories);
         }
     }

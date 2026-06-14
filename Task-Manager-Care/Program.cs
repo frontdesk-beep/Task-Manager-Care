@@ -1,83 +1,93 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-//using Microsoft.Identity.Tokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AppDbContext>(options=>options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// existing services...
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+//builder.Services.AddScoped<TaskNotificationService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:4200"
-            )
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
-//for login jwt
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(
-    options =>
-    {
-    options.TokenValidationParameters =
-    new TokenValidationParameters
+
+// Add SignalR
+builder.Services.AddSignalR();
+
+// JWT Auth
+var jwtKey = builder.Configuration["JWT:Key"];
+var jwtIssuer = builder.Configuration["JWT:Issuer"];
+var jwtAudience = builder.Configuration["JWT:Audience"];
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-
         ValidateAudience = true,
-
         ValidateLifetime = true,
-
         ValidateIssuerSigningKey = true,
-        ValidIssuer =
-        builder.Configuration["Jwt:Issuer"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
 
-        ValidAudience =
-        builder.Configuration["Jwt:Audience"],
+    // Allow JWTs to be passed to SignalR via query string "access_token"
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/taskHub"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
 
-        IssuerSigningKey =
-        new SymmetricSecurityKey(
+builder.Services.AddAuthorization();
 
-        Encoding.UTF8.GetBytes(
-
-        builder.Configuration["Jwt:Key"]
-        ))
-       };
-    });
-   
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 var app = builder.Build();
-app.UseCors(
-     "AllowAngular"
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseRouting();
+app.UseCors(policy => policy
+.AllowAnyOrigin()
+.AllowAnyMethod()
+.AllowAnyHeader()
     );
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<TaskHub>("/taskHub");
 
 app.Run();

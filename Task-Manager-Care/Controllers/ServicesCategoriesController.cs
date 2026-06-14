@@ -7,7 +7,7 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ServicesCategoriesController : Controller
+    public class ServicesCategoriesController : ControllerBase
     {
         private readonly AppDbContext _context;
         public ServicesCategoriesController(AppDbContext context)
@@ -16,9 +16,18 @@ namespace Task_Manager_Care.Controllers
         }
         //GET ALL SERVICE CATEGORIES
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ServiceCategory>>> GetServiceCategories()
+        public ActionResult GetServiceCategories()
         {
-            var serviceCategories = await _context.ServiceCategories.ToListAsync();
+            var serviceCategories = new[]
+            {
+                new { Id = 1, Name = "Investment" },
+                new { Id = 2, Name = "Insurance" },
+                new { Id = 3, Name = "TAX" },
+                new { Id = 4, Name = "Real Estate" },
+                new { Id = 5, Name = "Morgage" },
+                new { Id = 6, Name = "Travel Insurance" },
+                new { Id = 7, Name = "Financial Planning" }
+            };
             return Ok(serviceCategories);
         }
     }

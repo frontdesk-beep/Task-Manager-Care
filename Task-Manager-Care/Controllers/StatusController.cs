@@ -3,12 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Models;
 
-
 namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class StatusController : Controller
+    public class StatusController : ControllerBase
     {
         private readonly AppDbContext _context;
         public StatusController(AppDbContext context)
@@ -17,9 +16,15 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Status>>> GetStatuses()
+        public ActionResult GetStatuses()
         {
-            var statuses = await _context.Statuses.ToListAsync();
+            var statuses = new[]
+            {
+                new { Id = 1, Name = "Pending" },
+                new { Id = 2, Name = "In Progress" },
+                new { Id = 3, Name = "Completed" },
+                new { Id = 5, Name = "Cancelled" }
+            };
             return Ok(statuses);
         }
     }

@@ -9,15 +9,20 @@ namespace Task_Manager_Care.Data
             : base(options)
         {
         }
-
         //Models
         public DbSet<User> Users { get; set; }
         public DbSet<TaskItem> Tasks { get; set; }
+        public DbSet<Client> Clients { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<ClientCategory> ClientCategories { get; set; }
         public DbSet<Status> Statuses { get; set; }
+        public DbSet<TaskHistory> TaskHistories { get; set; }
+        public DbSet<CommentEntity> Comments => Set<CommentEntity>();
+        public DbSet<Priority> Priorities { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ServiceCategory>().HasData(
                 new ServiceCategory { Id = 1, Name = "Investments" },
                 new ServiceCategory { Id = 2, Name = "Insurance" },
@@ -27,11 +32,13 @@ namespace Task_Manager_Care.Data
                 new ServiceCategory { Id = 6, Name = "Travel Insurance" },
                 new ServiceCategory { Id = 7, Name = "Financial Planners" }
             );
+
             modelBuilder.Entity<ClientCategory>().HasData(
                 new ClientCategory { Id = 1, ClientType = "Existing Client" },
                 new ClientCategory { Id = 2, ClientType = "New Client" },
                 new ClientCategory { Id = 3, ClientType = "Not Sure"} // for now - for new employees
             );
+
             modelBuilder.Entity<Status>().HasData(
                new Status { Id = 1, Name = "Pending" },
                new Status { Id = 2, Name = "In Progress" },
@@ -45,6 +52,16 @@ namespace Task_Manager_Care.Data
             );
             //To restrict someone if by mistake if they delete the employee and they have assigned too many
             //tasks so the data will be lost to stop that use the restrict behaviour
+            modelBuilder.Entity<Client>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Client>()
+                .HasOne(c => c.ClientCategory)
+                .WithMany()
+                .HasForeignKey(c => c.ClientCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.CreatedBy)
@@ -55,6 +72,19 @@ namespace Task_Manager_Care.Data
                 .HasOne(t=>t.AssignedTo)
                 .WithMany()
                 .HasForeignKey(t=>t.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<CommentEntity>()
+                .HasOne(c => c.TaskItem)
+                .WithMany(t => t.Comments)
+                .HasForeignKey(c => c.TaskId);
+            modelBuilder.Entity<CommentEntity>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId);
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.TaskItem)
+                .WithMany()
+                .HasForeignKey(n => n.TaskId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

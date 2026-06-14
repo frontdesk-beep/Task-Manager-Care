@@ -16,10 +16,9 @@ namespace Task_Manager_Care.Models
         [EmailAddress]
         public string Email { get; set; }
 
-        [Required]
-        [StringLength(100, MinimumLength = 8)]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")]
-        public string Password { get; set; }
+        //[StringLength(100, MinimumLength = 8)]
+        //[RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")]
+        public string? Password { get; set; }
 
         
         [Required]
@@ -27,15 +26,6 @@ namespace Task_Manager_Care.Models
         public string Role { get; set; } // "Admin" or "Employee"
         [DataType(DataType.DateTime)]
         public DateTime CreatedAt { get; set; }
-        public string? OtpCode
-        {
-            get; set;
-        }
-
-        public DateTime? OtpExpiry
-        {
-            get; set;
-        }
     }
 
 }

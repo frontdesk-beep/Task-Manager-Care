@@ -22,6 +22,55 @@ namespace Task_Manager_Care.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Task_Manager_Care.Models.Client", b =>
+                {
+                    b.Property<int>("ClientId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ClientCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ClientId");
+
+                    b.HasIndex("ClientCategoryId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Clients");
+                });
+
             modelBuilder.Entity("Task_Manager_Care.Models.ClientCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -56,6 +105,69 @@ namespace Task_Manager_Care.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Task_Manager_Care.Models.CommentEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Task_Manager_Care.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Task_Manager_Care.Models.Priority", b =>
                 {
                     b.Property<int>("Id")
@@ -70,7 +182,7 @@ namespace Task_Manager_Care.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Priority");
+                    b.ToTable("Priorities");
 
                     b.HasData(
                         new
@@ -183,6 +295,38 @@ namespace Task_Manager_Care.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Task_Manager_Care.Models.TaskHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ChangedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("NewStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OldStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TaskHistories");
+                });
+
             modelBuilder.Entity("Task_Manager_Care.Models.TaskItem", b =>
                 {
                     b.Property<int>("Id")
@@ -206,7 +350,8 @@ namespace Task_Manager_Care.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Created_On")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("Relational:JsonPropertyName", "createdOn");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
@@ -215,14 +360,13 @@ namespace Task_Manager_Care.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("LongDescription")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PriorityId")
                         .HasColumnType("int");
@@ -233,10 +377,14 @@ namespace Task_Manager_Care.Migrations
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("Updated_On")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("task_Description")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasAnnotation("Relational:JsonPropertyName", "task_Description");
 
                     b.HasKey("Id");
 
@@ -275,16 +423,8 @@ namespace Task_Manager_Care.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("OtpCode")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("OtpExpiry")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -294,6 +434,62 @@ namespace Task_Manager_Care.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Task_Manager_Care.Models.Client", b =>
+                {
+                    b.HasOne("Task_Manager_Care.Models.ClientCategory", "ClientCategory")
+                        .WithMany()
+                        .HasForeignKey("ClientCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Task_Manager_Care.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClientCategory");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("Task_Manager_Care.Models.CommentEntity", b =>
+                {
+                    b.HasOne("Task_Manager_Care.Models.TaskItem", "TaskItem")
+                        .WithMany("Comments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Task_Manager_Care.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaskItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Task_Manager_Care.Models.Notification", b =>
+                {
+                    b.HasOne("Task_Manager_Care.Models.TaskItem", "TaskItem")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Task_Manager_Care.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaskItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Task_Manager_Care.Models.TaskItem", b =>
@@ -345,6 +541,11 @@ namespace Task_Manager_Care.Migrations
                     b.Navigation("ServiceCategory");
 
                     b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Task_Manager_Care.Models.TaskItem", b =>
+                {
+                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }
