@@ -56,7 +56,7 @@ namespace Task_Manager_Care.Controllers
             var userId = int.Parse(User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             var user = await _context.Users.FindAsync(userId);
 
-            var comment = new Comment
+            var comment = new CommentEntity
             {
                 TaskId = taskId,
                 UserId = userId,

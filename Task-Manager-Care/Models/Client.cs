@@ -26,8 +26,8 @@ namespace Task_Manager_Care.Models
         public string? Address { get; set; }
 
         public DateTime CreatedOn { get; set; }
-        public int CreatedById { get; set; }
-            public User? CreatedBy { get; set; }
+        public int? CreatedById { get; set; }
+        public User? CreatedBy { get; set; }
         public bool IsDeleted { get; set; } = false;
     }
 }

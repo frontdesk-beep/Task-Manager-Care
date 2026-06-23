@@ -138,7 +138,9 @@ namespace Task_Manager_Care.Controllers
         public IActionResult GetProfile(int id)
         {
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            if (user == null) 
+                return NotFound(new 
+                { message = "User not found." });
             return Ok(new { id = user.Id, name = user.Name, email = user.Email, role = user.Role });
         }
 
