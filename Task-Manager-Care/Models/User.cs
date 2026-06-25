@@ -26,6 +26,7 @@ namespace Task_Manager_Care.Models
         public string Role { get; set; } // "Admin" or "Employee"
         [DataType(DataType.DateTime)]
         public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; } = true; // New property to indicate if the user is active or not
     }
 
 }

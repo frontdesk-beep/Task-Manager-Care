@@ -71,7 +71,8 @@ namespace Task_Manager_Care.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginRequest request)
         {
-            var user = _context.Users.FirstOrDefault(x => x.Email == request.Email);
+            var user = _context.Users.FirstOrDefault(x => x.Email == request.Email 
+            && x.IsActive);
             if (user == null)
                 return Unauthorized(new { message = "User not found." });
 
