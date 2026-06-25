@@ -71,11 +71,22 @@ namespace Task_Manager_Care.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginRequest request)
         {
-            var user = _context.Users.FirstOrDefault(x => x.Email == request.Email 
-            && x.IsActive);
-            if (user == null)
-                return Unauthorized(new { message = "User not found." });
+            var user = _context.Users
+                .FirstOrDefault(x => x.Email == request.Email);
 
+            if (user == null)
+            {
+                return Unauthorized(new
+                { message = "User not found."
+                });
+            }
+            if(!user.IsActive)
+            {
+                return StatusCode(403, new
+                { 
+                    message = "User account has been deactivated.Please contact an administrator"
+                });
+            }
             // Verify password. Handle legacy/plain-text stored passwords by catching
             // FormatException thrown when the stored value isn't in the expected hashed format.
             bool passwordValid = false;
