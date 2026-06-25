@@ -25,7 +25,6 @@ namespace Task_Manager_Care.Controllers
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             var users = await _context.Users
-                .Where(u => u.IsActive)
                 .ToListAsync();
 
             return Ok(users);
