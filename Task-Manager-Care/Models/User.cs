@@ -8,23 +8,10 @@ namespace Task_Manager_Care.Models
     public class User
     {
         public int Id { get; set; }
-        [Required]
-        [StringLength(100)]
         public string Name { get; set; }
-
-        [Required]
-        [EmailAddress]
         public string Email { get; set; }
-
-        //[StringLength(100, MinimumLength = 8)]
-        //[RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")]
         public string? Password { get; set; }
-
-        
-        [Required]
-        [StringLength(20)]
         public string Role { get; set; } // "Admin" or "Employee"
-        [DataType(DataType.DateTime)]
         public DateTime CreatedAt { get; set; }
         public bool IsActive { get; set; } = true; // New property to indicate if the user is active or not
     }
