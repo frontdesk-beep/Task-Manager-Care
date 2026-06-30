@@ -55,7 +55,8 @@ namespace Task_Manager_Care.Controllers
                 Password = _hasher.HashPassword(null, dto.Password),
                 Role = dto.Role,
                 CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                DOB = dto.DOB
             };
 
             _context.Users.Add(user);

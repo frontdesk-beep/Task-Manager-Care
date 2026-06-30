@@ -45,6 +45,9 @@ namespace Task_Manager_Care.DTOs
             [Required(ErrorMessage = "Created Date is required.")]
             [DataType(DataType.Date)]
             public DateTime CreatedAt { get; set; }
+
+            [DataType(DataType.Date)]
+            public DateOnly? DOB { get; set; }
             public bool IsActive { get; set; } = true; // New property to indicate if the user is active or not
         }
 
