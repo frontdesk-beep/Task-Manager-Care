@@ -12,18 +12,18 @@ namespace Task_Manager_Care.Models
         [StringLength(100)]
         public string? ClientName { get; set; }
 
-
         //2 Categories: "New Client" and "Existing Client".
         //This helps in categorizing tasks based on the client's status, allowing for tailored approaches in task management and client interactions.
         //Navigation property - EF Core to load
         public int ClientCategoryId { get; set; } // Foreign key to ClientCategory
         public ClientCategory? ClientCategory { get; set; }
 
-        [Required]
-        [StringLength(100)]
+        [Required(ErrorMessage ="Phone Number is required.")]
+        [StringLength(15, ErrorMessage ="Phone number can not exceeds the 15 characters")]
+        [Phone(ErrorMessage ="Invalid phone number format.")]
         public string? PhoneNumber { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Email is required.")]
         [EmailAddress]
         public string? Email { get; set; }
 
@@ -47,7 +47,8 @@ namespace Task_Manager_Care.Models
         public string? task_Description { get; set; }
         public string? LongDescription { get; set; } // Additional notes or comments about the task
 
-        [Required]
+        [Required(ErrorMessage = "Due Date is required.")]
+        [DataType(DataType.Date)]
         public DateTime DueDate { get; set; } // Date by which the task should be completed
         
         [Required]
