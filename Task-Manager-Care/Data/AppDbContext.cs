@@ -56,7 +56,7 @@ namespace Task_Manager_Care.Data
                 .HasOne(c => c.CreatedBy)
                 .WithMany()
                 .HasForeignKey(c => c.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<Client>()
                 .HasOne(c => c.ClientCategory)
                 .WithMany()

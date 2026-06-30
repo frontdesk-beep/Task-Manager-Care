@@ -2,7 +2,7 @@
 
 namespace Task_Manager_Care.DTOs
 {
-    public class UpdateProfileRequest
+    public class UpdateProfileRequestDto
     {
         [Required]
         public string Name { get; set; }    

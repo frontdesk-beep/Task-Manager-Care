@@ -8,24 +8,31 @@ namespace Task_Manager_Care.Models
     public class User
     {
         public int Id { get; set; }
-        [Required]
-        [StringLength(100)]
         public string Name { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Email is required.")]
         [EmailAddress]
+        [RegularExpression(@"[A-Za-z0-9._%+-]+@careinsurance\.ca",
+            ErrorMessage = "Email must be a valid email address ending with @careinsurance.ca")]
         public string Email { get; set; }
 
-        //[StringLength(100, MinimumLength = 8)]
-        //[RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")]
+        [Required(ErrorMessage = "Password is required.")]
+        [StringLength(100, MinimumLength = 8,
+       ErrorMessage = "Password must be at least 8 characters.")]
+        [RegularExpression(
+       @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$",
+       ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         public string? Password { get; set; }
 
-        
-        [Required]
-        [StringLength(20)]
         public string Role { get; set; } // "Admin" or "Employee"
-        [DataType(DataType.DateTime)]
+
+        [Required(ErrorMessage = "Created At is required.")]
+        [DataType(DataType.Date)]
         public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; } = true; // New property to indicate if the user is active or not
+
+        [DataType(DataType.Date)]
+        public DateOnly? DOB {  get; set; } // Date of Birth property added to the User model
     }
 
 }
