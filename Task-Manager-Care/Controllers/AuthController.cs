@@ -48,7 +48,7 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        public async Task<IActionResult> Register(RegisterRequestDto request)
         {
             if (_context.Users.Any(x => x.Email == request.Email))
                 return BadRequest(new { message = "Email already exists" });
@@ -69,7 +69,7 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login(LoginRequest request)
+        public IActionResult Login(LoginDto request)
         {
             var user = _context.Users
                 .FirstOrDefault(x => x.Email == request.Email);
@@ -121,7 +121,7 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public IActionResult Password(ForgotPasswordRequest request)
+        public IActionResult Password(ForgotPasswordRequestDto request)
         {
             var user = _context.Users.FirstOrDefault(x => x.Email == request.Email);
             if (user == null) return NotFound(new { message = "User not found." });
@@ -157,7 +157,7 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpPut("profile/{id}")]
-        public IActionResult UpdateProfile(int id, UpdateProfileRequest request)
+        public IActionResult UpdateProfile(int id, UpdateProfileRequestDto request)
         {
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
             if (user == null) return NotFound(new { message = "User not found." });
