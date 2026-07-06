@@ -137,7 +137,7 @@ namespace Task_Manager_Care.Controllers
                     UserId = task.AssignedToId,
                     TaskId = task.Id,
                     Message = $"Task '{task.ClientName}' assigned to you.",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedOn = DateTime.UtcNow
                 };
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
@@ -195,7 +195,7 @@ namespace Task_Manager_Care.Controllers
                 UserId = existing.AssignedToId,
                 TaskId = existing.Id,
                 Message = $"Task '{existing.ClientName}' updated. Status: {existing.StatusId}",
-                CreatedAt = DateTime.UtcNow
+                CreatedOn = DateTime.UtcNow
             };
             _context.Notifications.Add(note);
 

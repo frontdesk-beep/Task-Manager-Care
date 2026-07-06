@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.Services;
+using Task_Manager_Care.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +15,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //builder.Services.AddScoped<TaskNotificationService>();
-
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>

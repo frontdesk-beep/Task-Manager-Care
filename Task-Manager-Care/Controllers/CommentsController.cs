@@ -83,7 +83,7 @@ namespace Task_Manager_Care.Controllers
                 UserId = task.CreatedById,
                 TaskId = taskId,
                 Message = $"{user?.Name} commented on task '{task.ClientName}'",
-                CreatedAt = DateTime.UtcNow
+                CreatedOn = DateTime.UtcNow
             };
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
