@@ -33,6 +33,7 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.CreatedBy)
                 .Include(t => t.Status)
                 .Include(t => t.PriorityNavigation)
+                .Include(t=> t.ServiceCategory)
                 .AsQueryable();
 
             if (AssignedToId.HasValue)
@@ -50,6 +51,7 @@ namespace Task_Manager_Care.Controllers
                 task_Description = t.task_Description,
                 t.AssignedToId,
                 t.ServiceCategoryId,
+                ServiceCategoryName = t.ServiceCategory?.Name,
                 t.ClientCategoryId,
                 assignedToName = t.AssignedTo?.Name,
                 t.CreatedById,
@@ -74,6 +76,7 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.CreatedBy)
                 .Include(t => t.Status)
                 .Include(t => t.PriorityNavigation)
+                .Include(t => t.ServiceCategory)
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (task == null) return NotFound();
             var result = new
@@ -82,6 +85,7 @@ namespace Task_Manager_Care.Controllers
                 task.ClientName,
                 task.ClientCategoryId,
                 task.ServiceCategoryId,
+                ServiceCategoryName = task.ServiceCategory?.Name,
                 task.task_Description,
                 task.AssignedToId,
                 assignedToName = task.AssignedTo?.Name,
