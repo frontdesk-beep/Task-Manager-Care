@@ -27,16 +27,18 @@ namespace Task_Manager_Care.Services
 
             //Open Tasks
             //SELECT COUNT(*) FROM Tasks WHERE StatusId = 3 - except complted all other 3 tasks are open
-            summary.OpenTasks= await _context.Tasks.CountAsync(t => t.StatusId != 3);
+            summary.OpenTasks= await _context.Tasks.CountAsync(t => t.Status.Name != "Completed");
 
             //Completed Tasks
-            summary.CompletedTasks= await _context.Tasks.CountAsync(t => t.StatusId == 3);
+            summary.CompletedTasks= await _context.Tasks.CountAsync(t => t.Status.Name == "Completed");
 
+            //Pending Tasks
+            summary.PendingTasks=await _context.Tasks.CountAsync(t => t.Status.Name == "Pending");
             //OverDue Tasks
             summary.OverDueTasks= await _context.Tasks
                 .CountAsync(t =>
                 t.DueDate < DateTime.Now &&
-                t.StatusId != 3);
+                t.Status.Name != "Completed");
         return summary;
         }
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
@@ -46,21 +48,27 @@ namespace Task_Manager_Care.Services
             summary.TotalClients = await _context.Clients
                 .CountAsync(c => c.CreatedById == userId);
             summary.TotalEmployees = 0;
+
             summary.OpenTasks = await _context.Tasks
             .CountAsync(t =>
             t.AssignedToId == userId &&
-            t.StatusId != 3);
+            t.Status.Name != "Completed");
+
+            summary.PendingTasks = await _context.Tasks
+                .CountAsync(t =>
+                    t.AssignedToId == userId &&
+                    t.Status.Name == "Pending");
 
             summary.CompletedTasks = await _context.Tasks
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
-                    t.StatusId == 3);
+                    t.Status.Name == "Completed");
 
             summary.OverDueTasks = await _context.Tasks
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
-                    t.StatusId != 3 &&
-                    t.DueDate < DateTime.Now);
+                    t.Status.Name != "Completed" &&
+                    t.DueDate < DateTime.Today);
 
            return summary;
 
