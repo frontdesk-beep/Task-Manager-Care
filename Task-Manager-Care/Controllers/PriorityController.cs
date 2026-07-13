@@ -25,6 +25,7 @@ namespace Task_Manager_Care.Controllers
                 new { Id = 1, Name = "Low" },
                 new { Id = 2, Name = "Medium" },
                 new { Id = 3, Name = "High" },
+                new { Id= 4, Name="Urgent"},
             };
             return Ok(priorities);
         }

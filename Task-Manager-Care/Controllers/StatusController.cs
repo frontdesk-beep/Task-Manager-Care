@@ -20,9 +20,10 @@ namespace Task_Manager_Care.Controllers
         {
             var statuses = new[]
             {
-                new { Id = 1, Name = "Pending" },
-                new { Id = 2, Name = "In Progress" },
-                new { Id = 3, Name = "Completed" },
+                new { Id = 1, Name = "Assigned"},
+                new { Id = 2, Name = "Pending" },
+                new { Id = 3, Name = "In Progress" },
+                new { Id = 4, Name = "Completed" },
                 new { Id = 5, Name = "Cancelled" }
             };
             return Ok(statuses);
