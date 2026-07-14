@@ -106,17 +106,19 @@ namespace Task_Manager_Care.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask(TaskItem task)
         {
-            task.Created_On = task.Created_On == default ? DateTime.UtcNow : task.Created_On;
-            // CHECK IF CLIENT EXISTS
-            var existingClient =
-                await _context.Clients
-                .FirstOrDefaultAsync(c =>
-                    (c.Email == task.Email || 
-                    c.PhoneNumber ==  task.PhoneNumber) 
-                && !c.IsDeleted);
+            if (task.ClientId != null)
+            {
+                var client = await _context.Clients
+                .FirstOrDefaultAsync(c => c.ClientId == task.ClientId);
 
-            // CREATE CLIENT IF NOT EXISTS
-            if (existingClient == null)
+                if (client == null)
+                    return BadRequest("Client not found");
+                task.ClientName = client.ClientName;
+                task.PhoneNumber = client.PhoneNumber;
+                task.Email = client.Email;
+                task.ClientCategoryId = client.ClientCategoryId;
+            }
+            else
             {
                 var client = new Client
                 {
@@ -128,6 +130,8 @@ namespace Task_Manager_Care.Controllers
                     CreatedById = task.CreatedById
                 };
                 _context.Clients.Add(client);
+                await _context.SaveChangesAsync();
+                task.ClientId = client.ClientId;
             }
 
             _context.Tasks.Add(task);
@@ -153,9 +157,29 @@ namespace Task_Manager_Care.Controllers
 
             // also broadcast to creator
             await _hub.Clients.User(task.CreatedById.ToString())
-                      .SendAsync("TaskCreated", task);
+                      .SendAsync("TaskCreated", new
+                      {
+                          task.Id,
+                          task.ClientName,
+                          task.StatusId,
+                          task.AssignedToId
+                      });
 
-            return Ok(task);
+            return Ok(new
+            {
+                task.Id,
+                task.ClientId,
+                task.ClientName,
+                task.PhoneNumber,
+                task.Email,
+                task.ClientCategoryId,
+                task.AssignedToId,
+                task.StatusId,
+                task.PriorityId,
+                task.ServiceCategoryId,
+                task.DueDate,
+                task.Created_On
+            });
         }
 
         [HttpPut("{id}")]
@@ -221,8 +245,15 @@ namespace Task_Manager_Care.Controllers
 
 
             // broadcast to relevant users
-            await _hub.Clients.User(existing.AssignedToId.ToString()).SendAsync("TaskUpdated", existing);
-
+            await _hub.Clients.User(existing.AssignedToId.ToString())
+                .SendAsync("TaskUpdated", new
+                {
+                    existing.Id,
+                    existing.ClientName,
+                    existing.StatusId,
+                    existing.AssignedToId,
+                    existing.DueDate
+                });
             return NoContent();
         }
 

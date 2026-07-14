@@ -26,7 +26,8 @@ namespace Task_Manager_Care.Controllers
                 new { Id = 4, Name = "Real Estate" },
                 new { Id = 5, Name = "Morgage" },
                 new { Id = 6, Name = "Travel Insurance" },
-                new { Id = 7, Name = "Financial Planning" }
+                new { Id = 7, Name = "Financial Planning" },
+                new { Id = 8, Name = "Others" },
             };
             return Ok(serviceCategories);
         }

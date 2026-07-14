@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Task_Manager_Care.Data;
 
@@ -11,9 +12,11 @@ using Task_Manager_Care.Data;
 namespace Task_Manager_Care.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710195152_addedoverdue")]
+    partial class addedoverdue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,6 +100,11 @@ namespace Task_Manager_Care.Migrations
                         {
                             Id = 2,
                             ClientType = "New Client"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ClientType = "Not Sure"
                         });
                 });
 
@@ -194,11 +202,6 @@ namespace Task_Manager_Care.Migrations
                         {
                             Id = 3,
                             Name = "High"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Urgent"
                         });
                 });
 
@@ -341,9 +344,6 @@ namespace Task_Manager_Care.Migrations
                     b.Property<int>("ClientCategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ClientId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ClientName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -394,8 +394,6 @@ namespace Task_Manager_Care.Migrations
                     b.HasIndex("AssignedToId");
 
                     b.HasIndex("ClientCategoryId");
-
-                    b.HasIndex("ClientId");
 
                     b.HasIndex("CreatedById");
 
@@ -516,11 +514,6 @@ namespace Task_Manager_Care.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Task_Manager_Care.Models.Client", "Client")
-                        .WithMany("Tasks")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Task_Manager_Care.Models.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
@@ -547,8 +540,6 @@ namespace Task_Manager_Care.Migrations
 
                     b.Navigation("AssignedTo");
 
-                    b.Navigation("Client");
-
                     b.Navigation("ClientCategory");
 
                     b.Navigation("CreatedBy");
@@ -558,11 +549,6 @@ namespace Task_Manager_Care.Migrations
                     b.Navigation("ServiceCategory");
 
                     b.Navigation("Status");
-                });
-
-            modelBuilder.Entity("Task_Manager_Care.Models.Client", b =>
-                {
-                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("Task_Manager_Care.Models.TaskItem", b =>

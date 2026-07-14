@@ -12,7 +12,7 @@ namespace Task_Manager_Care.Models
 
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress]
-        [RegularExpression(@"[A-Za-z0-9._%+-]+@careinsurance\.ca",
+        [RegularExpression(@"^[A-Za-z0-9._%+-]+@careinsurance\.ca$",
             ErrorMessage = "Email must be a valid email address ending with @careinsurance.ca")]
         public string Email { get; set; }
 

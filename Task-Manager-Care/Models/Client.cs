@@ -4,7 +4,6 @@ namespace Task_Manager_Care.Models
 {
     public class Client
     {
-        [Key]
         public int ClientId { get; set; }
 
         [Required]
@@ -29,5 +28,6 @@ namespace Task_Manager_Care.Models
         public int? CreatedById { get; set; }
         public User? CreatedBy { get; set; }
         public bool IsDeleted { get; set; } = false;
+        public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
 }
