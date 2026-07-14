@@ -8,9 +8,14 @@ namespace Task_Manager_Care.Models
     public class TaskItem
     {
         public int Id { get; set; }
+        public int? ClientId { get; set; } // Foreign key to Client
+
+        public Client? Client { get; set; } // Navigation property to Client
+
         [Required]
         [StringLength(100)]
         public string? ClientName { get; set; }
+
 
         //2 Categories: "New Client" and "Existing Client".
         //This helps in categorizing tasks based on the client's status, allowing for tailored approaches in task management and client interactions.

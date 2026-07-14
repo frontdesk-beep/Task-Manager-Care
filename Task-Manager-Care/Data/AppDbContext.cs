@@ -35,8 +35,7 @@ namespace Task_Manager_Care.Data
 
             modelBuilder.Entity<ClientCategory>().HasData(
                 new ClientCategory { Id = 1, ClientType = "Existing Client" },
-                new ClientCategory { Id = 2, ClientType = "New Client" },
-                new ClientCategory { Id = 3, ClientType = "Not Sure"} // for now - for new employees
+                new ClientCategory { Id = 2, ClientType = "New Client" }
             );
 
             modelBuilder.Entity<Status>().HasData(
@@ -48,7 +47,9 @@ namespace Task_Manager_Care.Data
             modelBuilder.Entity<Priority>().HasData( 
                 new Priority { Id = 1, Name = "Low" },
                 new Priority { Id = 2, Name = "Medium" },
-                new Priority { Id = 3, Name = "High" }
+                new Priority { Id = 3, Name = "High" },
+                new Priority { Id = 4, Name = "Urgent" }
+
             );
             //To restrict someone if by mistake if they delete the employee and they have assigned too many
             //tasks so the data will be lost to stop that use the restrict behaviour
@@ -85,6 +86,11 @@ namespace Task_Manager_Care.Data
                 .HasOne(n => n.TaskItem)
                 .WithMany()
                 .HasForeignKey(n => n.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TaskItem>()
+                .HasOne(t => t.Client)
+                .WithMany(c => c.Tasks)
+                .HasForeignKey(t => t.ClientId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
