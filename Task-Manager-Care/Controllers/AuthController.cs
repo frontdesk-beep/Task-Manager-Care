@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.DTOs;
 using Task_Manager_Care.Models;
+using Task_Manager_Care.Services;
+using System.Threading.Tasks;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -18,11 +20,14 @@ namespace Task_Manager_Care.Controllers
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly PasswordHasher<User> _hasher = new PasswordHasher<User>();
-
-        public AuthController(AppDbContext context, IConfiguration configuration)
+        private readonly IEmailService _emailService;
+        public AuthController(AppDbContext context, 
+            IConfiguration configuration,
+            IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         private string GenerateToken(User user)
@@ -121,31 +126,63 @@ namespace Task_Manager_Care.Controllers
         }
 
         [HttpPost("forgot-password")]
-        public IActionResult Password(ForgotPasswordRequestDto request)
+        public async Task<IActionResult> Password(ForgotPasswordRequestDto request)
         {
-            var user = _context.Users.FirstOrDefault(x => x.Email == request.Email);
-            if (user == null) return NotFound(new { message = "User not found." });
+            var user = _context.Users.
+                FirstOrDefault(x => x.Email == request.Email);
 
-            bool isSameAsOld = false;
-            try
-            {
-                var check = _hasher.VerifyHashedPassword(user, user.Password, request.NewPassword);
-                isSameAsOld = check == PasswordVerificationResult.Success;
-            }
-            catch (FormatException)
-            {
-                // Legacy stored password: compare raw values
-                isSameAsOld = user.Password == request.NewPassword;
-            }
+            if (user == null)
+                return Ok();
 
-            if (isSameAsOld)
-                return BadRequest(new { message = "New password must be different from old password." });
-
-            user.Password = _hasher.HashPassword(user, request.NewPassword);
-            _context.SaveChanges();
-            return Ok(new { message = "Password updated" });
+            if (!user.IsActive)
+                return BadRequest(new
+                {
+                    message = "Account is deactivated. Please contact an administrator."
+                });
+            user.PasswordResetToken = Guid.NewGuid().ToString();
+            user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+            await _context.SaveChangesAsync();
+            var resetLink =
+                $"http://localhost:4200/reset-password?token={user.PasswordResetToken}";
+            var body =
+                $@"<p>
+                Click the link below to reset your password:
+                </p>
+                <p><a href='{resetLink}'>Reset Password</a></p>
+                <p>This link expires in one hour.</p>";
+            await _emailService.SendEmailAsync(user.Email,
+                "Reset Password",
+                body);
+            return Ok(new { message = "Password reset link sent to your email." });
         }
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
+        {
+            Console.WriteLine($"Received Token: '{request.Token}'");
 
+            var user = _context.Users.FirstOrDefault(x =>
+                x.PasswordResetToken == request.Token);
+            Console.WriteLine(user == null ? "User NOT found" : "User found");
+            if (user == null)
+                return BadRequest("Invalid token");
+
+            if (user.PasswordResetTokenExpiry < DateTime.UtcNow)
+                return BadRequest("Token expired");
+
+            user.Password =
+                _hasher.HashPassword(user, request.NewPassword);
+
+            user.PasswordResetToken = null;
+
+            user.PasswordResetTokenExpiry = null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Password reset successfully."
+            });
+        }
         [HttpGet("profile/{id}")]
         public IActionResult GetProfile(int id)
         {
