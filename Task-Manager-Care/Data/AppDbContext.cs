@@ -30,7 +30,8 @@ namespace Task_Manager_Care.Data
                 new ServiceCategory { Id = 4, Name = "Real Estate" },
                 new ServiceCategory { Id = 5, Name = "Morgage" },
                 new ServiceCategory { Id = 6, Name = "Travel Insurance" },
-                new ServiceCategory { Id = 7, Name = "Financial Planners" }
+                new ServiceCategory { Id = 7, Name = "Financial Planners" },
+                new ServiceCategory { Id = 8, Name = "Others" }
             );
 
             modelBuilder.Entity<ClientCategory>().HasData(
@@ -39,10 +40,11 @@ namespace Task_Manager_Care.Data
             );
 
             modelBuilder.Entity<Status>().HasData(
-               new Status { Id = 1, Name = "Pending" },
-               new Status { Id = 2, Name = "In Progress" },
-               new Status { Id = 3, Name = "Completed" },
-               new Status { Id = 4, Name = "Reopened" }
+               new Status { Id = 1, Name = "Assigned" },
+               new Status { Id = 2, Name = "Pending" },
+               new Status { Id = 3, Name = "In Progress" },
+               new Status { Id = 4, Name = "Completed" },
+               new Status { Id = 5, Name = "Cancelled" }
             );
             modelBuilder.Entity<Priority>().HasData( 
                 new Priority { Id = 1, Name = "Low" },

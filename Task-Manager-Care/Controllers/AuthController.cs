@@ -128,6 +128,8 @@ namespace Task_Manager_Care.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> Password(ForgotPasswordRequestDto request)
         {
+            var frontendUrl = _configuration["AppSettings:FrontendUrl"];
+
             var user = _context.Users.
                 FirstOrDefault(x => x.Email == request.Email);
 
@@ -143,7 +145,7 @@ namespace Task_Manager_Care.Controllers
             user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
             await _context.SaveChangesAsync();
             var resetLink =
-                $"http://localhost:4200/reset-password?token={user.PasswordResetToken}";
+                 $"{frontendUrl}/reset-password?token={user.PasswordResetToken}";
             var body =
                 $@"<p>
                 Click the link below to reset your password:
