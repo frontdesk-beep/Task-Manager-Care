@@ -2,6 +2,7 @@
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Models;
 using Microsoft.EntityFrameworkCore;
+using Task_Manager_Care.DTOs;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -15,13 +16,73 @@ namespace Task_Manager_Care.Controllers
         {
             _context = context;
         }
+        // GET ALL CLIENTS WITH FILTERING, SORTING, AND PAGINATION
+        //use of clientquerydto to filter, sort, and paginate the clients
         [HttpGet]
-        public async Task<IActionResult> GetClients()
+        public async Task<IActionResult> GetClients(
+            [FromQuery] ClientQueryDto query)
         {
-            var clients = await _context.Clients
+            var clients = _context.Clients
                 .Where(c => !c.IsDeleted)
-                .ToListAsync();// Exclude deleted clients
-            return Ok(clients);
+                .AsQueryable();// Exclude deleted clients
+
+            //Search by client name
+            if(!string.IsNullOrWhiteSpace(query.Search))
+            {
+                clients = clients.Where(c =>
+                    c.ClientName.Contains(query.Search));
+            }
+            //Filter by category
+            if(query.CategoryId.HasValue)
+            {
+                clients = clients.Where(c =>
+                    c.ClientCategoryId == query.CategoryId.Value);
+            }
+            //Filter by created date
+            if(query.CreatedDate.HasValue)
+            {
+                var date = query.CreatedDate.Value.Date;
+
+                clients = clients.Where(c =>
+                    c.CreatedOn.Date == date.Date);
+            }
+            switch (query.SortBy?.ToLower())
+            {
+                case "clientname":
+                    clients = query.SortOrder == "desc"
+                        ? clients.OrderByDescending(c => c.ClientName)
+                        : clients.OrderBy(c => c.ClientName);
+                    break;
+
+                case "companyname":
+                    clients = query.SortOrder == "desc"
+                        ? clients.OrderByDescending(c => c.CompanyName)
+                        : clients.OrderBy(c => c.CompanyName);
+                    break;
+
+                case "createdon":
+                    clients = query.SortOrder == "desc"
+                        ? clients.OrderByDescending(c => c.CreatedOn)
+                        : clients.OrderBy(c => c.CreatedOn);
+                    break;
+
+                default:
+                    clients = clients.OrderBy(c => c.ClientId);
+                    break;
+            }
+            var totalRecords = await clients.CountAsync();
+            clients = clients
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize);
+            var result = await clients.ToListAsync();
+            return Ok(new
+            {
+                TotalRecords = totalRecords,
+                Page = query.Page,
+                PageSize= query.PageSize,
+                Data= result
+            });
+
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetClient(int id)

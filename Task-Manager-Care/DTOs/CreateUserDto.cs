@@ -36,8 +36,8 @@ namespace Task_Manager_Care.DTOs
 
             //Role
             [Required(ErrorMessage = "Role is required.")]
-            [RegularExpression(@"^(Admin|Employee)$",
-                ErrorMessage = "Role must be either 'Admin' or 'Employee'.")]
+            //[RegularExpression(@"^(Admin|Employee)$",
+            //    ErrorMessage = "Role must be either 'Admin' or 'Employee'.")]
             [StringLength(20)]
             public string Role { get; set; } // "Admin" or "Employee"
 
