@@ -63,7 +63,9 @@ namespace Task_Manager_Care.Controllers
                 t.DueDate,
                 t.Created_On,
                 t.PhoneNumber,
-                t.Email
+                t.Email,
+                t.LongDescription,
+                t.Updated_On
             });
 
             return Ok(result);
@@ -98,7 +100,7 @@ namespace Task_Manager_Care.Controllers
                 task.DueDate,
                 task.Created_On,
                 task.PhoneNumber,
-                task.Email,
+                task.Email
             };
             return Ok(result);
         }
