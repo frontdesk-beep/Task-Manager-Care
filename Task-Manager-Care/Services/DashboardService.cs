@@ -39,7 +39,13 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                 t.DueDate < DateTime.Now &&
                 t.Status.Name != "Completed");
-        return summary;
+
+            //Overdue Tasks
+            summary.UrgentTasks = await _context.Tasks
+                .CountAsync(t => 
+                t.PriorityNavigation.Name == "Urgent");
+
+            return summary;
         }
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
         {
@@ -69,6 +75,11 @@ namespace Task_Manager_Care.Services
                     t.AssignedToId == userId &&
                     t.Status.Name != "Completed" &&
                     t.DueDate < DateTime.Today);
+
+            summary.UrgentTasks = await _context.Tasks
+                .CountAsync(t =>
+                    t.AssignedToId == userId &&
+                    t.PriorityNavigation.Name == "Urgent");
 
             return summary;
 
