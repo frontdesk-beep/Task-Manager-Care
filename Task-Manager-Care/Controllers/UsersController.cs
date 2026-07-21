@@ -4,11 +4,14 @@ using Microsoft.AspNetCore.Identity;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Models;
 using Task_Manager_Care.DTOs;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -35,6 +38,8 @@ namespace Task_Manager_Care.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser(CreateUserDto dto)
         {
+            //find role
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
             // Prevent duplicate email
             bool emailExists = await _context.Users
                 .AnyAsync(u => u.Email == dto.Email);
@@ -46,7 +51,10 @@ namespace Task_Manager_Care.Controllers
                     message = "Email already exists."
                 });
             }
-
+            if (currentRole == "Admin" && dto.Role != "Employee")
+            {
+                return Forbid();
+            }
             // Map CreateUserDto to User model
             var user = new User
             {
@@ -73,6 +81,8 @@ namespace Task_Manager_Care.Controllers
             UpdateUserDto dto
         )
         {
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             var existing =
                 await _context.Users.FindAsync(id);
 
@@ -83,8 +93,12 @@ namespace Task_Manager_Care.Controllers
 
             existing.Name = dto.Name;
             existing.Email = dto.Email;
+            if (currentRole == "Admin")
+            {
+                if (dto.Role != "Employee")
+                    return Forbid();
+            }
             existing.Role = dto.Role;
-
             // Password NOT updated here
             // Use Profile/Forgot Password instead
 

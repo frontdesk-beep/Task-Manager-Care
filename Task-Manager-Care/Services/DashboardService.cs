@@ -39,7 +39,13 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                 t.DueDate < DateTime.Now &&
                 t.Status.Name != "Completed");
-        return summary;
+
+            //Overdue Tasks
+            summary.UrgentTasks = await _context.Tasks
+                .CountAsync(t => 
+                t.PriorityNavigation.Name == "Urgent");
+
+            return summary;
         }
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
         {
@@ -70,19 +76,24 @@ namespace Task_Manager_Care.Services
                     t.Status.Name != "Completed" &&
                     t.DueDate < DateTime.Today);
 
-           return summary;
+            summary.UrgentTasks = await _context.Tasks
+                .CountAsync(t =>
+                    t.AssignedToId == userId &&
+                    t.PriorityNavigation.Name == "Urgent");
+
+            return summary;
 
         }
 
         public async Task<List<RecentTaskDto>> GetRecentTasks()
         {
-            //similar to this query-SELECT TOP 5 t.Id,t.ClientName,u.Name,p.Name,s.NameFROM Tasks tINNER JOIN Users uON t.AssignedToId = u.IdINNER JOIN Statuses sON t.StatusId = s.IdINNER JOIN Priorities pON t.PriorityId = p.IdORDER BY t.Created_On DESC
+            //similar to this query-SELECT TOP 10 t.Id,t.ClientName,u.Name,p.Name,s.NameFROM Tasks tINNER JOIN Users uON t.AssignedToId = u.IdINNER JOIN Statuses sON t.StatusId = s.IdINNER JOIN Priorities pON t.PriorityId = p.IdORDER BY t.Created_On DESC
             var tasks = await _context.Tasks
                 .Include(t => t.AssignedTo)
                 .Include(t => t.Status)
                 .Include(t => t.PriorityNavigation)
                 .OrderByDescending(t => t.Created_On)
-                .Take(5)
+                .Take(10)
                 .Select(t => new RecentTaskDto
                 {
                     Id = t.Id,

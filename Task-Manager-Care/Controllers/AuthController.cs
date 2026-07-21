@@ -15,6 +15,7 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -52,26 +53,26 @@ namespace Task_Manager_Care.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequestDto request)
-        {
-            if (_context.Users.Any(x => x.Email == request.Email))
-                return BadRequest(new { message = "Email already exists" });
+        //[HttpPost("register")]
+        //public async Task<IActionResult> Register(RegisterRequestDto request)
+        //{
+        //    if (_context.Users.Any(x => x.Email == request.Email))
+        //        return BadRequest(new { message = "Email already exists" });
 
-            var user = new User
-            {
-                Name = request.Name,
-                Email = request.Email,
-                Role = "Employee",
-                CreatedAt = DateTime.UtcNow
-            };
+        //    var user = new User
+        //    {
+        //        Name = request.Name,
+        //        Email = request.Email,
+        //        Role = "Employee",
+        //        CreatedAt = DateTime.UtcNow
+        //    };
 
-            user.Password = _hasher.HashPassword(user, request.Password);
+        //    user.Password = _hasher.HashPassword(user, request.Password);
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Registration successful" });
-        }
+        //    _context.Users.Add(user);
+        //    await _context.SaveChangesAsync();
+        //    return Ok(new { message = "Registration successful" });
+        //}
 
         [HttpPost("login")]
         public IActionResult Login(LoginDto request)
