@@ -94,6 +94,11 @@ namespace Task_Manager_Care.Data
                 .WithMany(c => c.Tasks)
                 .HasForeignKey(t => t.ClientId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TaskHistory>()
+                .HasOne(h => h.ChangedBy)
+                .WithMany()
+                .HasForeignKey(h => h.ChangedById)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

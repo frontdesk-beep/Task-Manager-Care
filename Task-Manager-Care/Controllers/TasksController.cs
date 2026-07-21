@@ -20,8 +20,7 @@ namespace Task_Manager_Care.Controllers
         public TasksController(AppDbContext context, IHubContext<TaskHub> hub)
         {
             _context = context;
-            _hub = hub;
-            
+            _hub = hub;    
         }
 
         // GET /api/tasks?assignedToId=5&createdById=0
@@ -63,9 +62,7 @@ namespace Task_Manager_Care.Controllers
                 t.DueDate,
                 t.Created_On,
                 t.PhoneNumber,
-                t.Email,
-                t.LongDescription,
-                t.Updated_On
+                t.Email
             });
 
             return Ok(result);
@@ -100,7 +97,7 @@ namespace Task_Manager_Care.Controllers
                 task.DueDate,
                 task.Created_On,
                 task.PhoneNumber,
-                task.Email
+                task.Email,
             };
             return Ok(result);
         }
@@ -193,7 +190,18 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.Status)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (existing == null) return NotFound();
+            if (existing == null) 
+                return NotFound();
+
+            //save the old assignee
+            var oldAssignedToId = existing.AssignedToId;
+            //Load the old assigned user for history record
+            var oldAssignedUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == oldAssignedToId);
+
+            var newAssignedUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == updated.AssignedToId);
+
             // only update allowed fields (safe update)
             var oldStatus = existing.StatusId;
             existing.StatusId = updated.StatusId;
@@ -209,17 +217,31 @@ namespace Task_Manager_Care.Controllers
             await _context.SaveChangesAsync();
 
             // record history
-            _context.TaskHistories.Add(new TaskHistory
+            if (oldStatus != updated.StatusId)
             {
-                TaskId = existing.Id,
-                ChangedById = int.Parse(User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
-                OldStatusId = oldStatus,
-                NewStatusId = existing.StatusId,
-                ChangedAt = DateTime.UtcNow,
-                Note = $"Status changed from {oldStatus} to {existing.StatusId}"
-            });
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
+                    Action = "Status Changed",
+                    ChangedAt = DateTime.UtcNow,
+                    Description = $"Status changed from {oldStatus} to {existing.StatusId}"
+                });
+            }
+            if (oldAssignedToId != updated.AssignedToId)
+            {
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+                    Action = "Reassigned",
+                    ChangedAt = DateTime.UtcNow,
+                    Description = $"Task reassigned from {oldAssignedUser?.Name} to {newAssignedUser?.Name}"
+                });
+            }
 
-            // add notification for assigned user
+
+            // add notification for new assigned user
             var note = new Notification
             {
                 UserId = existing.AssignedToId,

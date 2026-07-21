@@ -15,10 +15,20 @@ namespace Task_Manager_Care.Controllers
         public async Task<IActionResult> GetHistory([FromQuery] int taskId)
         {
             var list = await _context.TaskHistories
-                .Where(h => h.TaskId == taskId)
-                .OrderByDescending(h => h.ChangedAt)
-                .ToListAsync();
-            return Ok(list);
+                .Include(x => x.ChangedBy)
+                .Where(x => x.TaskId == taskId)
+                .OrderByDescending(x => x.ChangedAt)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Action,
+                    x.Description,
+                    x.ChangedAt,
+                    ChangedBy = x.ChangedBy.Name
+        })
+        .ToListAsync();
+
+     return Ok(list);
         }
     }
 }
