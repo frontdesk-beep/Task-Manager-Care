@@ -7,19 +7,20 @@ using Task_Manager_Care.Controllers;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Models;
-using Microsoft.AspNetCore.Authorization;  
+using Microsoft.AspNetCore.Authorization;
+using Task_Manager_Care.Helpers;
 
 namespace Task_Manager_Care.Controllers
 {
     [ApiController]
     [Route("api/tasks/{taskId}/comments")]
     [Authorize]
-    public class CommentsController : ControllerBase
+    public class RemarkController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<TaskHub> _hub;
 
-        public CommentsController(AppDbContext context, IHubContext<TaskHub> hub)
+        public RemarkController(AppDbContext context, IHubContext<TaskHub> hub)
         {
             _context = context;
             _hub = hub;
@@ -56,15 +57,26 @@ namespace Task_Manager_Care.Controllers
             var userId = int.Parse(User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             var user = await _context.Users.FindAsync(userId);
 
-            var comment = new CommentEntity
+            var comment = new Remarks
             {
                 TaskId = taskId,
                 UserId = userId,
                 Text = dto.Text,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.ToEastern(DateTime.UtcNow)
             };
 
             _context.Comments.Add(comment);
+
+            await _context.SaveChangesAsync();
+            _context.TaskHistories.Add(new TaskHistory
+            {
+                TaskId = taskId,
+                ChangedById = userId,
+                Action = "Comment Added",
+                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                Description = $"{user?.Name} added a comment."
+            });
+
             await _context.SaveChangesAsync();
 
             var result = new
@@ -83,7 +95,7 @@ namespace Task_Manager_Care.Controllers
                 UserId = task.CreatedById,
                 TaskId = taskId,
                 Message = $"{user?.Name} commented on task '{task.ClientName}'",
-                CreatedOn = DateTime.UtcNow
+                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
             };
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
@@ -92,6 +104,57 @@ namespace Task_Manager_Care.Controllers
             await _hub.Clients.Group($"task-{taskId}").SendAsync("CommentAdded", result);
 
             return CreatedAtAction(nameof(GetComments), new { taskId }, result);
+        }
+
+    [HttpPut("{commentId}")]
+        public async Task<IActionResult> EditComment(int taskId, int commentId, CommentCreateDto dto)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var comment = await _context.Comments
+                .FirstOrDefaultAsync(x => x.Id == commentId && x.TaskId == taskId);
+
+            if (comment == null)
+                return NotFound();
+
+            if (comment.UserId != userId)
+                return Forbid();
+
+            comment.Text = dto.Text;
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.Group($"task-{taskId}")
+                .SendAsync("CommentEdited", new
+                {
+                    comment.Id,
+                    comment.Text
+                });
+
+            return NoContent();
+        }
+        [HttpDelete("{commentId}")]
+        public async Task<IActionResult> DeleteComment(int taskId, int commentId)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var comment = await _context.Comments
+                .FirstOrDefaultAsync(x => x.Id == commentId && x.TaskId == taskId);
+
+            if (comment == null)
+                return NotFound();
+
+            if (comment.UserId != userId)
+                return Forbid();
+
+            _context.Comments.Remove(comment);
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.Group($"task-{taskId}")
+                .SendAsync("CommentDeleted", commentId);
+
+            return NoContent();
         }
     }
     public class CommentCreateDto

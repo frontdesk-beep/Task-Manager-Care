@@ -17,7 +17,7 @@ namespace Task_Manager_Care.Data
         public DbSet<ClientCategory> ClientCategories { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<TaskHistory> TaskHistories { get; set; }
-        public DbSet<CommentEntity> Comments => Set<CommentEntity>();
+        public DbSet<Remarks> Comments => Set<Remarks>();
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,11 +76,11 @@ namespace Task_Manager_Care.Data
                 .WithMany()
                 .HasForeignKey(t=>t.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<CommentEntity>()
+            modelBuilder.Entity<Remarks>()
                 .HasOne(c => c.TaskItem)
                 .WithMany(t => t.Comments)
                 .HasForeignKey(c => c.TaskId);
-            modelBuilder.Entity<CommentEntity>()
+            modelBuilder.Entity<Remarks>()
                 .HasOne(c => c.User)
                 .WithMany()
                 .HasForeignKey(c => c.UserId);

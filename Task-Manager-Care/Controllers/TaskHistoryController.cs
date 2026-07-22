@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.Helpers;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -8,6 +9,7 @@ namespace Task_Manager_Care.Controllers
     [ApiController]
     public class TaskHistoryController : ControllerBase
     {
+        //ACTIVITY TAB
         private readonly AppDbContext _context;
         public TaskHistoryController(AppDbContext context) { _context = context; }
 
@@ -23,7 +25,7 @@ namespace Task_Manager_Care.Controllers
                     x.Id,
                     x.Action,
                     x.Description,
-                    x.ChangedAt,
+                    ChangedAt = DateTimeHelper.ToEastern(x.ChangedAt),
                     ChangedBy = x.ChangedBy.Name
         })
         .ToListAsync();

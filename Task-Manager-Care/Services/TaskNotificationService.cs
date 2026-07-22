@@ -45,7 +45,7 @@ namespace Backend.Services
             }
         }
 
-        public async Task PublishCommentAddedAsync(TaskItem task, CommentEntity comment)
+        public async Task PublishCommentAddedAsync(TaskItem task, Remarks comment)
         {
             var commentPayload = new
             {

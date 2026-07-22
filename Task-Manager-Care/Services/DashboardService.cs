@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.DTOs;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Interfaces;
 using Task_Manager_Care.Models;
 
@@ -50,6 +51,8 @@ namespace Task_Manager_Care.Services
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
         {
             DashboardSummaryDto summary = new DashboardSummaryDto();
+            var today = DateTimeHelper.ToEastern(DateTime.UtcNow).Date;
+
             // Total Clients assigned to the user
             summary.TotalClients = await _context.Clients
                 .CountAsync(c => c.CreatedById == userId);
@@ -74,7 +77,7 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
                     t.Status.Name != "Completed" &&
-                    t.DueDate < DateTime.Today);
+                    t.DueDate < today);
 
             summary.UrgentTasks = await _context.Tasks
                 .CountAsync(t =>
