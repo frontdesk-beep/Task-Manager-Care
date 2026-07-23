@@ -32,13 +32,14 @@ namespace Task_Manager_Care.Services
 
             //Completed Tasks
             summary.CompletedTasks= await _context.Tasks.CountAsync(t => t.Status.Name == "Completed");
+            var today = DateTimeHelper.ToEastern(DateTime.UtcNow).Date;
 
             //Pending Tasks
             summary.PendingTasks=await _context.Tasks.CountAsync(t => t.Status.Name == "Pending");
             //OverDue Tasks
             summary.OverDueTasks= await _context.Tasks
                 .CountAsync(t =>
-                t.DueDate < DateTime.Now &&
+                t.DueDate.Date < today &&
                 t.Status.Name != "Completed");
 
             //Overdue Tasks
@@ -77,7 +78,7 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
                     t.Status.Name != "Completed" &&
-                    t.DueDate < today);
+                    t.DueDate.Date < today);
 
             summary.UrgentTasks = await _context.Tasks
                 .CountAsync(t =>
@@ -104,7 +105,7 @@ namespace Task_Manager_Care.Services
                     AssignedTo = t.AssignedTo!.Name,
                     Priority = t.PriorityNavigation!.Name,
                     Status = t.Status!.Name,
-                    CreatedOn = t.Created_On
+                    Created_On = t.Created_On
                 })
                 .ToListAsync();
 

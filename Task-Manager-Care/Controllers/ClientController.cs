@@ -109,7 +109,7 @@ namespace Task_Manager_Care.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateClient(Client client)
         {
-            client.CreatedOn = DateTime.Now;
+            client.CreatedOn = DateTime.UtcNow;
 
             _context.Clients.Add(client);
 

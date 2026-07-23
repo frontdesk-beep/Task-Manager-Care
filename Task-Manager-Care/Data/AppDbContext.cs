@@ -28,7 +28,7 @@ namespace Task_Manager_Care.Data
                 new ServiceCategory { Id = 2, Name = "Insurance" },
                 new ServiceCategory { Id = 3, Name = "Tax" },
                 new ServiceCategory { Id = 4, Name = "Real Estate" },
-                new ServiceCategory { Id = 5, Name = "Morgage" },
+                new ServiceCategory { Id = 5, Name = "Mortgage" },
                 new ServiceCategory { Id = 6, Name = "Travel Insurance" },
                 new ServiceCategory { Id = 7, Name = "Financial Planners" },
                 new ServiceCategory { Id = 8, Name = "Others" }

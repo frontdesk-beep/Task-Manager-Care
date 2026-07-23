@@ -7,6 +7,6 @@
         public string AssignedTo { get; set; }
         public string Priority { get; set; }
         public string Status { get; set; }
-        public DateTime CreatedOn { get; set; }
+        public DateTime Created_On { get; set; }
     }
 }

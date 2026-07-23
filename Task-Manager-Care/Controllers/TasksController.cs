@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.DTOs;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Models;
-using Task_Manager_Care.Helpers;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -236,7 +237,7 @@ namespace Task_Manager_Care.Controllers
             var oldDueDate = existing.DueDate;
             var oldServiceCategory = existing.ServiceCategoryId;
             existing.StatusId = updated.StatusId;
-            existing.AssignedToId = updated.AssignedToId;
+            //existing.AssignedToId = updated.AssignedToId;
             existing.task_Description = updated.task_Description;
             existing.DueDate = updated.DueDate;
             existing.PriorityId = updated.PriorityId;
@@ -287,17 +288,17 @@ namespace Task_Manager_Care.Controllers
                     Description = $"Status changed from {oldStatusName} to {newStatusName}"
                 });
             }
-            if (oldAssignedToId != updated.AssignedToId)
-            {
-                _context.TaskHistories.Add(new TaskHistory
-                {
-                    TaskId = existing.Id,
-                    ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
-                    Action = "Reassigned",
-                    ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
-                    Description = $"Task reassigned from {oldAssignedUser?.Name} to {newAssignedUser?.Name}"
-                });
-            }
+            //if (oldAssignedToId != updated.AssignedToId)
+            //{
+            //    _context.TaskHistories.Add(new TaskHistory
+            //    {
+            //        TaskId = existing.Id,
+            //        ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+            //        Action = "Reassigned",
+            //        ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+            //        Description = $"Task reassigned from {oldAssignedUser?.Name} to {newAssignedUser?.Name}"
+            //    });
+            //}
             if (oldPriority != updated.PriorityId)
             {
                 _context.TaskHistories.Add(new TaskHistory
@@ -369,6 +370,71 @@ namespace Task_Manager_Care.Controllers
                     existing.DueDate
                 });
             return NoContent();
+        }
+
+        //reassigning the task
+        [HttpPut("{id}/reassign")]
+        public async Task<IActionResult> ReassignTask(int id, ReassignTaskDto dto)
+        {
+            var task = await _context.Tasks
+                .Include(x => x.AssignedTo)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (task == null)
+                return NotFound();
+            if (task.AssignedToId == dto.AssignedToId)
+            {
+                return BadRequest("Task is already assigned to this user.");
+            }
+
+            var oldUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == task.AssignedToId);
+
+            var newUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == dto.AssignedToId);
+
+            task.AssignedToId = dto.AssignedToId;
+
+            await _context.SaveChangesAsync();
+
+            _context.TaskHistories.Add(new TaskHistory
+            {
+                TaskId = task.Id,
+                ChangedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                Action = "Reassigned",
+                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                Description = $"Task reassigned from {oldUser?.Name} to {newUser?.Name}"
+            });
+
+            if (!string.IsNullOrWhiteSpace(dto.Comment))
+            {
+                _context.Comments.Add(new Remarks
+                {
+                    TaskId = task.Id,
+                    UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                    Text = dto.Comment,
+                    CreatedAt = DateTimeHelper.ToEastern(DateTime.UtcNow)
+                });
+            }
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = dto.AssignedToId,
+                TaskId = task.Id,
+                Message = $"Task '{task.ClientName}' has been assigned to you.",
+                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
+            });
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.User(dto.AssignedToId.ToString())
+                .SendAsync("TaskAssigned", new
+                {
+                    task.Id,
+                    task.ClientName
+                });
+
+            return Ok();
         }
 
         [HttpDelete("{id}")]
