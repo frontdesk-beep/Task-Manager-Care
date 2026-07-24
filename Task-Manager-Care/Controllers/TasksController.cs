@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 //for real time notifications
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Task_Manager_Care.Data;
-using Task_Manager_Care.Models;
+using Task_Manager_Care.DTOs;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Hubs;
+using Task_Manager_Care.Models;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -14,20 +17,27 @@ namespace Task_Manager_Care.Controllers
     [Authorize]
     public class TasksController : ControllerBase
     {
+        //ControllerBase - means this class contains the all task apis 
         private readonly AppDbContext _context;
         private readonly IHubContext<TaskHub> _hub;
 
+        //_context - talks to sql server
+        //_hub - talks to SignalR - live work
         public TasksController(AppDbContext context, IHubContext<TaskHub> hub)
         {
             _context = context;
-            _hub = hub;
-            
+            _hub = hub;    
         }
 
         // GET /api/tasks?assignedToId=5&createdById=0
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetTasks([FromQuery] int? AssignedToId, [FromQuery] int? CreatedById)
         {
+            //if we use the include then assignedtoid with name,email,role, assignedto
+            //without include - only assignedtoid
+            //select * from tasks - includes properties of assignedto,createdby,status,priority,service- like a join query bcoz, tasks table does not contain values which we want,
+            //so it is for example, assignedto but -> users table for all employee related items.
+            //AssignedToId → Users,  CreatedById → Users, StatusId → Statuses, PriorityId → Priorities, ServiceCategoryId → ServiceCategories
             var q = _context.Tasks
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)
@@ -35,15 +45,18 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.PriorityNavigation)
                 .Include(t=> t.ServiceCategory)
                 .AsQueryable();
-
+            //Asqueryable means i am still building my query
+            //if assignedtoid has value then add assignedtoid = value same for createdbyid
             if (AssignedToId.HasValue)
                 q = q.Where(t => t.AssignedToId == AssignedToId.Value);
 
             if (CreatedById.HasValue)
                 q = q.Where(t => t.CreatedById == CreatedById.Value);
 
+            //now sql runs
             var tasks = await q.ToListAsync();
 
+            //instead of sending whole entity we are sending only required jason
             var result = tasks.Select(t => new
             {
                 t.Id,
@@ -63,9 +76,7 @@ namespace Task_Manager_Care.Controllers
                 t.DueDate,
                 t.Created_On,
                 t.PhoneNumber,
-                t.Email,
-                t.LongDescription,
-                t.Updated_On
+                t.Email
             });
 
             return Ok(result);
@@ -80,7 +91,10 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.PriorityNavigation)
                 .Include(t => t.ServiceCategory)
                 .FirstOrDefaultAsync(t => t.Id == id);
-            if (task == null) return NotFound();
+            
+            if (task == null) 
+                return NotFound();
+
             var result = new
             {
                 task.Id,
@@ -100,7 +114,7 @@ namespace Task_Manager_Care.Controllers
                 task.DueDate,
                 task.Created_On,
                 task.PhoneNumber,
-                task.Email
+                task.Email,
             };
             return Ok(result);
         }
@@ -115,6 +129,7 @@ namespace Task_Manager_Care.Controllers
 
                 if (client == null)
                     return BadRequest("Client not found");
+
                 task.ClientName = client.ClientName;
                 task.PhoneNumber = client.PhoneNumber;
                 task.Email = client.Email;
@@ -128,9 +143,10 @@ namespace Task_Manager_Care.Controllers
                     ClientCategoryId = task.ClientCategoryId,
                     PhoneNumber = task.PhoneNumber,
                     Email = task.Email,
-                    CreatedOn = DateTime.UtcNow,
+                    CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow),
                     CreatedById = task.CreatedById
                 };
+
                 _context.Clients.Add(client);
                 await _context.SaveChangesAsync();
                 task.ClientId = client.ClientId;
@@ -138,6 +154,16 @@ namespace Task_Manager_Care.Controllers
 
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
+
+            _context.TaskHistories.Add(new TaskHistory
+            {
+                TaskId = task.Id,
+                ChangedById = task.CreatedById,
+                Action = "Created",
+                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                Description = $"Task '{task.ClientName}' created."
+            });
+            await _context.SaveChangesAsync();   // Saves the history record
 
             // create notification for assigned user
             if (task.AssignedToId != 0)
@@ -147,7 +173,7 @@ namespace Task_Manager_Care.Controllers
                     UserId = task.AssignedToId,
                     TaskId = task.Id,
                     Message = $"Task '{task.ClientName}' assigned to you.",
-                    CreatedOn = DateTime.UtcNow
+                    CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
                 };
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
@@ -193,11 +219,25 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.Status)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (existing == null) return NotFound();
+            if (existing == null) 
+                return NotFound();
+
+            //save the old assignee
+            var oldAssignedToId = existing.AssignedToId;
+            //Load the old assigned user for history record
+            var oldAssignedUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == oldAssignedToId);
+
+            var newAssignedUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == updated.AssignedToId);
+
             // only update allowed fields (safe update)
             var oldStatus = existing.StatusId;
+            var oldPriority = existing.PriorityId;
+            var oldDueDate = existing.DueDate;
+            var oldServiceCategory = existing.ServiceCategoryId;
             existing.StatusId = updated.StatusId;
-            existing.AssignedToId = updated.AssignedToId;
+            //existing.AssignedToId = updated.AssignedToId;
             existing.task_Description = updated.task_Description;
             existing.DueDate = updated.DueDate;
             existing.PriorityId = updated.PriorityId;
@@ -207,25 +247,98 @@ namespace Task_Manager_Care.Controllers
             existing.Email = updated.Email;
 
             await _context.SaveChangesAsync();
+            var oldStatusName = await _context.Statuses
+                .Where(x => x.Id == oldStatus)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+
+            var newStatusName = await _context.Statuses
+                .Where(x => x.Id == updated.StatusId)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+            var oldPriorityName = await _context.Priorities
+                .Where(x => x.Id == oldPriority)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+
+            var newPriorityName = await _context.Priorities
+                .Where(x => x.Id == updated.PriorityId)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+            var oldService = await _context.ServiceCategories
+                .Where(x => x.Id == oldServiceCategory)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+
+            var newService = await _context.ServiceCategories
+                .Where(x => x.Id == updated.ServiceCategoryId)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
+
 
             // record history
-            _context.TaskHistories.Add(new TaskHistory
+            if (oldStatus != updated.StatusId)
             {
-                TaskId = existing.Id,
-                ChangedById = int.Parse(User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
-                OldStatusId = oldStatus,
-                NewStatusId = existing.StatusId,
-                ChangedAt = DateTime.UtcNow,
-                Note = $"Status changed from {oldStatus} to {existing.StatusId}"
-            });
-
-            // add notification for assigned user
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
+                    Action = "Status Changed",
+                    ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                    Description = $"Status changed from {oldStatusName} to {newStatusName}"
+                });
+            }
+            //if (oldAssignedToId != updated.AssignedToId)
+            //{
+            //    _context.TaskHistories.Add(new TaskHistory
+            //    {
+            //        TaskId = existing.Id,
+            //        ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+            //        Action = "Reassigned",
+            //        ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+            //        Description = $"Task reassigned from {oldAssignedUser?.Name} to {newAssignedUser?.Name}"
+            //    });
+            //}
+            if (oldPriority != updated.PriorityId)
+            {
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+                    Action = "Priority Changed",
+                    ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                    Description = $"Priority changed from {oldPriorityName} to {newPriorityName}"
+                });
+            }
+            if (oldDueDate != updated.DueDate)
+            {
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+                    Action = "Due Date Changed",
+                    ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                    Description = $"Due date changed from {oldDueDate:d} to {updated.DueDate:d}"
+                });
+            }
+            if (oldServiceCategory != updated.ServiceCategoryId)
+            {
+                _context.TaskHistories.Add(new TaskHistory
+                {
+                    TaskId = existing.Id,
+                    ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
+                    Action = "Service Category Changed",
+                    ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                    Description = $"Service changed from '{oldService}' to '{newService}'"
+                });
+            }
+            // add notification for new assigned user
             var note = new Notification
             {
                 UserId = existing.AssignedToId,
                 TaskId = existing.Id,
                 Message = $"Task '{existing.ClientName}' updated. Status: {existing.StatusId}",
-                CreatedOn = DateTime.UtcNow
+                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)   
             };
             _context.Notifications.Add(note);
 
@@ -259,11 +372,88 @@ namespace Task_Manager_Care.Controllers
             return NoContent();
         }
 
+        //reassigning the task
+        [HttpPut("{id}/reassign")]
+        public async Task<IActionResult> ReassignTask(int id, ReassignTaskDto dto)
+        {
+            var task = await _context.Tasks
+                .Include(x => x.AssignedTo)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (task == null)
+                return NotFound();
+            if (task.AssignedToId == dto.AssignedToId)
+            {
+                return BadRequest("Task is already assigned to this user.");
+            }
+
+            var oldUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == task.AssignedToId);
+
+            var newUser = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == dto.AssignedToId);
+
+            task.AssignedToId = dto.AssignedToId;
+
+            await _context.SaveChangesAsync();
+
+            _context.TaskHistories.Add(new TaskHistory
+            {
+                TaskId = task.Id,
+                ChangedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                Action = "Reassigned",
+                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                Description = $"Task reassigned from {oldUser?.Name} to {newUser?.Name}"
+            });
+
+            if (!string.IsNullOrWhiteSpace(dto.Comment))
+            {
+                _context.Comments.Add(new Remarks
+                {
+                    TaskId = task.Id,
+                    UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                    Text = dto.Comment,
+                    CreatedAt = DateTimeHelper.ToEastern(DateTime.UtcNow)
+                });
+            }
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = dto.AssignedToId,
+                TaskId = task.Id,
+                Message = $"Task '{task.ClientName}' has been assigned to you.",
+                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
+            });
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.User(dto.AssignedToId.ToString())
+                .SendAsync("TaskAssigned", new
+                {
+                    task.Id,
+                    task.ClientName
+                });
+
+            return Ok();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
             var t = await _context.Tasks.FindAsync(id);
-            if (t == null) return NotFound();
+
+            if (t == null)
+                return NotFound();
+
+            _context.TaskHistories.Add(new TaskHistory
+            {
+                TaskId = t.Id,
+                ChangedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                Action = "Deleted",
+                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                Description = $"Task '{t.ClientName}' deleted."
+            });
+
             _context.Tasks.Remove(t);
             await _context.SaveChangesAsync();
             await _hub.Clients.All.SendAsync("TaskDeleted", new { taskId = id });

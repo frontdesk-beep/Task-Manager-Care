@@ -1,6 +1,6 @@
 ﻿namespace Task_Manager_Care.Models
 {
-    public class CommentEntity
+    public class Remarks
     {
         public int Id { get; set; } // Primary key for the comment
         public int TaskId { get; set; } // Foreign key to the associated task

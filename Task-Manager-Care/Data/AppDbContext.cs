@@ -17,7 +17,7 @@ namespace Task_Manager_Care.Data
         public DbSet<ClientCategory> ClientCategories { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<TaskHistory> TaskHistories { get; set; }
-        public DbSet<CommentEntity> Comments => Set<CommentEntity>();
+        public DbSet<Remarks> Comments => Set<Remarks>();
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,7 +28,7 @@ namespace Task_Manager_Care.Data
                 new ServiceCategory { Id = 2, Name = "Insurance" },
                 new ServiceCategory { Id = 3, Name = "Tax" },
                 new ServiceCategory { Id = 4, Name = "Real Estate" },
-                new ServiceCategory { Id = 5, Name = "Morgage" },
+                new ServiceCategory { Id = 5, Name = "Mortgage" },
                 new ServiceCategory { Id = 6, Name = "Travel Insurance" },
                 new ServiceCategory { Id = 7, Name = "Financial Planners" },
                 new ServiceCategory { Id = 8, Name = "Others" }
@@ -76,11 +76,11 @@ namespace Task_Manager_Care.Data
                 .WithMany()
                 .HasForeignKey(t=>t.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<CommentEntity>()
+            modelBuilder.Entity<Remarks>()
                 .HasOne(c => c.TaskItem)
                 .WithMany(t => t.Comments)
                 .HasForeignKey(c => c.TaskId);
-            modelBuilder.Entity<CommentEntity>()
+            modelBuilder.Entity<Remarks>()
                 .HasOne(c => c.User)
                 .WithMany()
                 .HasForeignKey(c => c.UserId);
@@ -93,6 +93,11 @@ namespace Task_Manager_Care.Data
                 .HasOne(t => t.Client)
                 .WithMany(c => c.Tasks)
                 .HasForeignKey(t => t.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TaskHistory>()
+                .HasOne(h => h.ChangedBy)
+                .WithMany()
+                .HasForeignKey(h => h.ChangedById)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

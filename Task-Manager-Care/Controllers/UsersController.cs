@@ -11,7 +11,7 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin,SuperAdmin")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -36,6 +36,7 @@ namespace Task_Manager_Care.Controllers
 
         // CREATE USER
         [HttpPost]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<ActionResult<User>> CreateUser(CreateUserDto dto)
         {
             //find role
@@ -76,6 +77,8 @@ namespace Task_Manager_Care.Controllers
 
         // UPDATE USER
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+
         public async Task<IActionResult> UpdateUser(
             int id,
             UpdateUserDto dto
@@ -108,6 +111,7 @@ namespace Task_Manager_Care.Controllers
 
         // SOFT DELETE USER
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var user =

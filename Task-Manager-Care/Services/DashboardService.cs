@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.DTOs;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Interfaces;
 using Task_Manager_Care.Models;
 
@@ -31,13 +32,14 @@ namespace Task_Manager_Care.Services
 
             //Completed Tasks
             summary.CompletedTasks= await _context.Tasks.CountAsync(t => t.Status.Name == "Completed");
+            var today = DateTimeHelper.ToEastern(DateTime.UtcNow).Date;
 
             //Pending Tasks
             summary.PendingTasks=await _context.Tasks.CountAsync(t => t.Status.Name == "Pending");
             //OverDue Tasks
             summary.OverDueTasks= await _context.Tasks
                 .CountAsync(t =>
-                t.DueDate < DateTime.Now &&
+                t.DueDate.Date < today &&
                 t.Status.Name != "Completed");
 
             //Overdue Tasks
@@ -50,6 +52,8 @@ namespace Task_Manager_Care.Services
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
         {
             DashboardSummaryDto summary = new DashboardSummaryDto();
+            var today = DateTimeHelper.ToEastern(DateTime.UtcNow).Date;
+
             // Total Clients assigned to the user
             summary.TotalClients = await _context.Clients
                 .CountAsync(c => c.CreatedById == userId);
@@ -74,7 +78,7 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
                     t.Status.Name != "Completed" &&
-                    t.DueDate < DateTime.Today);
+                    t.DueDate.Date < today);
 
             summary.UrgentTasks = await _context.Tasks
                 .CountAsync(t =>
@@ -101,7 +105,7 @@ namespace Task_Manager_Care.Services
                     AssignedTo = t.AssignedTo!.Name,
                     Priority = t.PriorityNavigation!.Name,
                     Status = t.Status!.Name,
-                    CreatedOn = t.Created_On
+                    Created_On = t.Created_On
                 })
                 .ToListAsync();
 

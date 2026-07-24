@@ -72,6 +72,6 @@ namespace Task_Manager_Care.Models
         public int PriorityId { get; set; } // Foreign key to Priority
         public Priority? PriorityNavigation { get; set; } // Navigation property to Priority
 
-        public List<CommentEntity>? Comments { get; set; } // Navigation property to Comments (one-to-many relationship)
+        public List<Remarks>? Comments { get; set; } // Navigation property to Comments (one-to-many relationship)
     }
 }
