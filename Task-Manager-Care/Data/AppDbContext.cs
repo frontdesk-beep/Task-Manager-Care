@@ -16,7 +16,7 @@ namespace Task_Manager_Care.Data
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<ClientCategory> ClientCategories { get; set; }
         public DbSet<Status> Statuses { get; set; }
-        public DbSet<TaskHistory> TaskHistories { get; set; }
+        public DbSet<Activity> TaskHistories { get; set; }
         public DbSet<Remarks> Comments => Set<Remarks>();
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<Notification> Notifications { get; set; }
@@ -94,7 +94,7 @@ namespace Task_Manager_Care.Data
                 .WithMany(c => c.Tasks)
                 .HasForeignKey(t => t.ClientId)
                 .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<TaskHistory>()
+            modelBuilder.Entity<Activity>()
                 .HasOne(h => h.ChangedBy)
                 .WithMany()
                 .HasForeignKey(h => h.ChangedById)

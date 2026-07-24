@@ -13,9 +13,10 @@ namespace Task_Manager_Care.Services
         private readonly AppDbContext _context=context;
 
         //creates an empty object
+        //for admin all tasks
         public async Task<DashboardSummaryDto> GetSummary()
         {
-            DashboardSummaryDto summary= new DashboardSummaryDto();
+            DashboardSummaryDto summary = new DashboardSummaryDto();
             //throw new NotImplementedException();
 
             //Total Clients
@@ -24,29 +25,39 @@ namespace Task_Manager_Care.Services
 
             //Total Employees
             //select COUNT(*) from Users
-            summary.TotalEmployees= await _context.Users.CountAsync();
+            summary.TotalEmployees = await _context.Users.CountAsync();
 
             //Open Tasks
             //SELECT COUNT(*) FROM Tasks WHERE StatusId = 3 - except complted all other 3 tasks are open
-            summary.OpenTasks= await _context.Tasks.CountAsync(t => t.Status.Name != "Completed");
+            summary.OpenTasks = await _context.Tasks
+                .CountAsync(t => t.Status.Name != "Completed" &&
+                t.Status.Name != "Cancelled");
 
             //Completed Tasks
-            summary.CompletedTasks= await _context.Tasks.CountAsync(t => t.Status.Name == "Completed");
+            summary.CompletedTasks = await _context.Tasks.CountAsync(t => t.Status.Name == "Completed");
             var today = DateTimeHelper.ToEastern(DateTime.UtcNow).Date;
 
             //Pending Tasks
-            summary.PendingTasks=await _context.Tasks.CountAsync(t => t.Status.Name == "Pending");
+            summary.PendingTasks = await _context.Tasks.CountAsync(t => t.Status.Name == "Pending");
             //OverDue Tasks
-            summary.OverDueTasks= await _context.Tasks
+            summary.OverDueTasks = await _context.Tasks
                 .CountAsync(t =>
                 t.DueDate.Date < today &&
-                t.Status.Name != "Completed");
+                t.Status.Name != "Completed" &&
+                t.Status.Name != "Cancelled");
 
-            //Overdue Tasks
+            summary.AssignedTasks = await _context.Tasks
+                .CountAsync(t =>
+                t.Status.Name == "Assigned"
+                && t.Status.Name != "Completed");
+
+            //urgent Tasks
             summary.UrgentTasks = await _context.Tasks
-                .CountAsync(t => 
-                t.PriorityNavigation.Name == "Urgent");
-
+                .CountAsync(t =>
+                t.PriorityNavigation.Name == "Urgent" &&
+                t.Status.Name != "Completed" &&
+                t.Status.Name != "Cancelled");
+         
             return summary;
         }
         public async Task<DashboardSummaryDto> GetMySummary(int userId)
@@ -69,6 +80,11 @@ namespace Task_Manager_Care.Services
                     t.AssignedToId == userId &&
                     t.Status.Name == "Pending");
 
+            summary.AssignedTasks = await _context.Tasks
+                .CountAsync(t =>
+                    t.AssignedToId == userId &&
+                    t.Status.Name == "Assigned");
+
             summary.CompletedTasks = await _context.Tasks
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
@@ -78,12 +94,15 @@ namespace Task_Manager_Care.Services
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
                     t.Status.Name != "Completed" &&
+                     t.Status.Name != "Cancelled" &&
                     t.DueDate.Date < today);
 
             summary.UrgentTasks = await _context.Tasks
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
-                    t.PriorityNavigation.Name == "Urgent");
+                    t.PriorityNavigation.Name == "Urgent" &&
+                    t.Status.Name != "Completed" 
+                    && t.Status.Name != "Cancelled");
 
             return summary;
 
