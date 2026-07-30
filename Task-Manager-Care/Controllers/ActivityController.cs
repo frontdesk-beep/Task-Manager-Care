@@ -7,11 +7,11 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TaskHistoryController : ControllerBase
+    public class ActivityController : ControllerBase
     {
         //ACTIVITY TAB
         private readonly AppDbContext _context;
-        public TaskHistoryController(AppDbContext context) { _context = context; }
+        public ActivityController(AppDbContext context) { _context = context; }
 
         [HttpGet]
         public async Task<IActionResult> GetHistory([FromQuery] int taskId)

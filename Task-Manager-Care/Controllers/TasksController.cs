@@ -31,7 +31,11 @@ namespace Task_Manager_Care.Controllers
 
         // GET /api/tasks?assignedToId=5&createdById=0
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetTasks([FromQuery] int? AssignedToId, [FromQuery] int? CreatedById)
+        public async Task<ActionResult<IEnumerable<object>>> GetTasks(
+            [FromQuery] int? AssignedToId, 
+            [FromQuery] int? CreatedById,
+            [FromQuery] bool activeOnly = false
+            )
         {
             //if we use the include then assignedtoid with name,email,role, assignedto
             //without include - only assignedtoid
@@ -52,6 +56,12 @@ namespace Task_Manager_Care.Controllers
 
             if (CreatedById.HasValue)
                 q = q.Where(t => t.CreatedById == CreatedById.Value);
+            if (activeOnly)
+            {
+                q = q.Where(t =>
+                    t.Status.Name != "Completed" &&
+                    t.Status.Name != "Cancelled");
+            }
 
             //now sql runs
             var tasks = await q.ToListAsync();
@@ -80,6 +90,48 @@ namespace Task_Manager_Care.Controllers
             });
 
             return Ok(result);
+        }
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActiveTasks()
+        {
+            var tasks = await _context.Tasks
+                .Include(t => t.AssignedTo)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Status)
+                .Include(t => t.PriorityNavigation)
+                .Include(t => t.ServiceCategory)
+                .Where(t =>
+                    t.Status.Name != "Completed" &&
+                    t.Status.Name != "Cancelled")
+                .ToListAsync();
+
+            return Ok(tasks.Select(t => new
+            {
+                t.Id,
+                t.ClientName,
+                t.ClientCategoryId,
+                t.PhoneNumber,
+                t.Email,
+                task_Description = t.task_Description,
+
+                t.AssignedToId,
+                assignedToName = t.AssignedTo.Name,
+
+                t.CreatedById,
+                createdByName = t.CreatedBy.Name,
+
+                t.StatusId,
+                statusName = t.Status.Name,
+
+                t.PriorityId,
+                priorityName = t.PriorityNavigation.Name,
+
+                t.ServiceCategoryId,
+                ServiceCategoryName = t.ServiceCategory.Name,
+
+                t.DueDate,
+                t.Created_On
+            }));
         }
         [HttpGet("{id}")]
         public async Task<ActionResult<TaskItem>> GetTask(int id)
@@ -155,7 +207,7 @@ namespace Task_Manager_Care.Controllers
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
-            _context.TaskHistories.Add(new TaskHistory
+            _context.TaskHistories.Add(new Activity
             {
                 TaskId = task.Id,
                 ChangedById = task.CreatedById,
@@ -237,6 +289,20 @@ namespace Task_Manager_Care.Controllers
             var oldDueDate = existing.DueDate;
             var oldServiceCategory = existing.ServiceCategoryId;
             existing.StatusId = updated.StatusId;
+            var completedStatusId = await _context.Statuses
+                .Where(s => s.Name == "Completed")
+                .Select(s => s.Id)
+                .FirstOrDefaultAsync();
+
+            if (updated.StatusId == completedStatusId)
+            {
+                if (existing.CompletedOn == null)
+                    existing.CompletedOn = DateTimeHelper.ToEastern(DateTime.Now);
+            }
+            else
+            {
+                existing.CompletedOn = null;
+            }
             //existing.AssignedToId = updated.AssignedToId;
             existing.task_Description = updated.task_Description;
             existing.DueDate = updated.DueDate;
@@ -279,7 +345,7 @@ namespace Task_Manager_Care.Controllers
             // record history
             if (oldStatus != updated.StatusId)
             {
-                _context.TaskHistories.Add(new TaskHistory
+                _context.TaskHistories.Add(new Activity
                 {
                     TaskId = existing.Id,
                     ChangedById = int.Parse(User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
@@ -288,20 +354,10 @@ namespace Task_Manager_Care.Controllers
                     Description = $"Status changed from {oldStatusName} to {newStatusName}"
                 });
             }
-            //if (oldAssignedToId != updated.AssignedToId)
-            //{
-            //    _context.TaskHistories.Add(new TaskHistory
-            //    {
-            //        TaskId = existing.Id,
-            //        ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
-            //        Action = "Reassigned",
-            //        ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
-            //        Description = $"Task reassigned from {oldAssignedUser?.Name} to {newAssignedUser?.Name}"
-            //    });
-            //}
+          
             if (oldPriority != updated.PriorityId)
             {
-                _context.TaskHistories.Add(new TaskHistory
+                _context.TaskHistories.Add(new Activity
                 {
                     TaskId = existing.Id,
                     ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
@@ -312,7 +368,7 @@ namespace Task_Manager_Care.Controllers
             }
             if (oldDueDate != updated.DueDate)
             {
-                _context.TaskHistories.Add(new TaskHistory
+                _context.TaskHistories.Add(new Activity
                 {
                     TaskId = existing.Id,
                     ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
@@ -323,7 +379,7 @@ namespace Task_Manager_Care.Controllers
             }
             if (oldServiceCategory != updated.ServiceCategoryId)
             {
-                _context.TaskHistories.Add(new TaskHistory
+                _context.TaskHistories.Add(new Activity
                 {
                     TaskId = existing.Id,
                     ChangedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
@@ -397,7 +453,7 @@ namespace Task_Manager_Care.Controllers
 
             await _context.SaveChangesAsync();
 
-            _context.TaskHistories.Add(new TaskHistory
+            _context.TaskHistories.Add(new Activity
             {
                 TaskId = task.Id,
                 ChangedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
@@ -440,12 +496,13 @@ namespace Task_Manager_Care.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
+
             var t = await _context.Tasks.FindAsync(id);
 
             if (t == null)
                 return NotFound();
 
-            _context.TaskHistories.Add(new TaskHistory
+            _context.TaskHistories.Add(new Activity
             {
                 TaskId = t.Id,
                 ChangedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),

@@ -1,6 +1,6 @@
 ﻿namespace Task_Manager_Care.Models
 {
-    public class TaskHistory
+    public class Activity
     {
         public int Id { get; set; }
         public int TaskId { get; set; }

@@ -68,7 +68,7 @@ namespace Task_Manager_Care.Controllers
             _context.Comments.Add(comment);
 
             await _context.SaveChangesAsync();
-            _context.TaskHistories.Add(new TaskHistory
+            _context.TaskHistories.Add(new Activity
             {
                 TaskId = taskId,
                 ChangedById = userId,

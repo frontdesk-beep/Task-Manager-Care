@@ -42,6 +42,7 @@ namespace Task_Manager_Care.Models
         public DateTime Created_On { get; set; } // Date and time when the task was created
         public DateTime? Updated_On { get; set; } // Date and time when the task was last updated (nullable for new tasks)
 
+        public DateTime? CompletedOn { get; set; } // Date and time when the task was completed (nullable for tasks not yet completed)
         public int StatusId { get; set; } // "Pending", "In Progress", "Completed"
         //Navigation property - EF Core to load
         public Status? Status { get; set; } // Navigation property to Status
