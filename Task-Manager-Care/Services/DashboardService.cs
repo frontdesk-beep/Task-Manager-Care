@@ -30,7 +30,8 @@ namespace Task_Manager_Care.Services
             //Open Tasks
             //SELECT COUNT(*) FROM Tasks WHERE StatusId = 3 - except complted all other 3 tasks are open
             summary.OpenTasks = await _context.Tasks
-                .CountAsync(t => t.Status.Name != "Completed" &&
+                .CountAsync(t => 
+                t.Status.Name != "Completed" &&
                 t.Status.Name != "Cancelled");
 
             //Completed Tasks
@@ -73,7 +74,8 @@ namespace Task_Manager_Care.Services
             summary.OpenTasks = await _context.Tasks
             .CountAsync(t =>
             t.AssignedToId == userId &&
-            t.Status.Name != "Completed");
+            t.Status.Name != "Completed" &&
+            t.Status.Name != "Cancelled");
 
             summary.PendingTasks = await _context.Tasks
                 .CountAsync(t =>
@@ -83,7 +85,8 @@ namespace Task_Manager_Care.Services
             summary.AssignedTasks = await _context.Tasks
                 .CountAsync(t =>
                     t.AssignedToId == userId &&
-                    t.Status.Name == "Assigned");
+                    t.Status.Name == "Assigned" &&
+                    t.Status.Name != "Completed");
 
             summary.CompletedTasks = await _context.Tasks
                 .CountAsync(t =>

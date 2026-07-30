@@ -97,15 +97,15 @@ namespace Task_Manager_Care.Controllers
 
             return Ok(client);
         }
-        [HttpGet("existing")]
-        public async Task<IActionResult> GetExistingClients()
-        {
-            var clients = await _context.Clients
-                .Where(c => c.ClientCategoryId == 2)   // Existing Client
-                .ToListAsync();
+        //[HttpGet("existing")]
+        //public async Task<IActionResult> GetExistingClients()
+        //{
+        //    var clients = await _context.Clients
+        //        .Where(c => c.ClientCategoryId == 2)   // Existing Client
+        //        .ToListAsync();
 
-            return Ok(clients);
-        }
+        //    return Ok(clients);
+        //}
         [HttpPost]
         public async Task<IActionResult> CreateClient(Client client)
         {

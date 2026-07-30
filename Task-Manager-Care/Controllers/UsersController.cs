@@ -26,12 +26,66 @@ namespace Task_Manager_Care.Controllers
 
         // GET ALL ACTIVE USERS
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<IActionResult> GetUsers(
+            [FromQuery] EmployeeQueryDto query)
         {
-            var users = await _context.Users
-                .ToListAsync();
+            var users = _context.Users.AsQueryable();
 
-            return Ok(users);
+            //search by name or email
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                users = users.Where(u =>
+                    u.Name.Contains(query.Search) ||
+                    u.Email.Contains(query.Search));
+            }
+            //filter by active status
+            if(query.IsActive.HasValue)
+            {
+                users = users.Where(u => u.IsActive == query.IsActive.Value);
+            }
+            //filter by role
+            if(!string.IsNullOrWhiteSpace(query.Role))
+            {
+                users = users.Where(u => u.Role == query.Role);
+            }
+            switch(query.SortBy?.ToLower())
+            {
+                case "name":
+                    users = query.SortOrder == "desc"
+                        ? users.OrderByDescending(u => u.Name)
+                        : users.OrderBy(u => u.Name);
+                    break;
+                case "email":
+                    users = query.SortOrder == "desc"
+                        ? users.OrderByDescending(u => u.Email)
+                        : users.OrderBy(u => u.Email);
+                    break;
+                case "role":
+                    users = query.SortOrder == "desc"
+                        ? users.OrderByDescending(u => u.Role)
+                        : users.OrderBy(u => u.Role);
+                    break;
+                default:
+                    users = query.SortOrder == "desc"
+                        ? users.OrderByDescending(u => u.Name)
+                        : users.OrderBy(u => u.Name);
+                    break;
+            }
+            var totalRecords = await users.CountAsync();
+
+            users = users
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize);
+
+            var result = await users.ToListAsync();
+
+            return Ok(new
+            {
+                TotalRecords = totalRecords,
+                Page = query.Page,
+                PageSize = query.PageSize,
+                Data = result
+            });
         }
 
         // CREATE USER
