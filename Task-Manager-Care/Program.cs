@@ -18,6 +18,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 //for email reset link
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddCors(options =>
 {
@@ -82,11 +83,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
-app.UseCors(policy => policy
-.AllowAnyOrigin()
-.AllowAnyMethod()
-.AllowAnyHeader()
-    );
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 
