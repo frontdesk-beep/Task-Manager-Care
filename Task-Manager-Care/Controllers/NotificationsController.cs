@@ -13,13 +13,18 @@ namespace Task_Manager_Care.Controllers
     {
         private readonly AppDbContext _context;
         public NotificationsController(AppDbContext context) { _context = context; }
-
+        [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetNotifications([FromQuery] int userId)
+        public async Task<IActionResult> GetNotifications()
         {
+            var userId = int.Parse(
+        User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value
+    );
+
             var notifications = await _context.Notifications
                 .Where(n=> n.UserId == userId)
                 .OrderByDescending(n => n.CreatedOn)
+                .Take(30)
                 .ToListAsync();
 
                 return Ok(notifications);

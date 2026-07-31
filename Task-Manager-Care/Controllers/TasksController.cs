@@ -232,39 +232,7 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     "TaskAssigned"
                     );
-                // notify via SignalR: target user by NameIdentifier (user id string)
-                //await _hub.Clients.User(task.AssignedToId.ToString())
-                //          .SendAsync("TaskAssigned", new
-                //          {
-                //              notification = new
-                //              {
-                //                  notification.Id,
-                //                  notification.Message,
-                //                  notification.CreatedOn,
-                //                  notification.IsRead
-                //              },
-                //              task = new
-                //              {
-                //                  task.Id,
-                //                  task.ClientName,
-                //                  task.AssignedToId,
-                //                  task.StatusId,
-                //                  task.PriorityId,
-                //                  task.DueDate
-                //              }
-                //          });
             }
-
-            //// also broadcast to creator
-            //await _hub.Clients.User(task.CreatedById.ToString())
-            //          .SendAsync("TaskCreated", new
-            //          {
-            //              task.Id,
-            //              task.ClientName,
-            //              task.StatusId,
-            //              task.AssignedToId
-            //          });
-
             return Ok(new
             {
                 task.Id,
@@ -409,39 +377,9 @@ namespace Task_Manager_Care.Controllers
                     Description = $"Service changed from '{oldService}' to '{newService}'"
                 });
             }
-            bool importantChange =
-                oldStatus != updated.StatusId ||
-                oldPriority != updated.PriorityId ||
-                oldDueDate != updated.DueDate ||
-                oldServiceCategory != updated.ServiceCategoryId ||
-                oldAssignedToId != updated.AssignedToId;
-
-            if (importantChange)
-            {
-                await _notificationService.NotifyUser(
-                    existing.AssignedToId,
-                    "Task Updated",
-                    $"Task '{existing.ClientName}' was updated.",
-                    existing.Id,
-                    "TaskUpdated"
-            );
-            }
+            
             await _context.SaveChangesAsync();
-            // Broadcast with full details
-            //var taskDetail = new
-            //{
-            //    existing.Id,
-            //    existing.ClientName,
-            //    task_Description = existing.task_Description,
-            //    existing.AssignedToId,
-            //    assignedToName = existing.AssignedTo?.Name,
-            //    existing.CreatedById,
-            //    createdByName = existing.CreatedBy?.Name,
-            //    existing.StatusId,
-            //    statusName = existing.Status?.Name,
-            //    existing.DueDate
-            //};
-
+            
 
             // broadcast to relevant users
             // notify old assignee if task was reassigned
@@ -454,23 +392,6 @@ namespace Task_Manager_Care.Controllers
                         message = $"Task '{existing.ClientName}' was reassigned."
                     });
             }
-
-            // notify new assignee / current assignee about update
-            await _hub.Clients.User(existing.AssignedToId.ToString())
-                .SendAsync("TaskUpdated", new
-                {
-                    task = new
-                    {
-                        existing.Id,
-                        existing.ClientName,
-                        existing.task_Description,
-                        existing.StatusId,
-                        existing.PriorityId,
-                        existing.AssignedToId,
-                        existing.ServiceCategoryId,
-                        existing.DueDate
-                    }
-                });
             return NoContent();
         }
 
@@ -526,6 +447,13 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     "TaskAssigned"
                 );
+            await _notificationService.NotifyUser(
+                    task.CreatedById,
+                    "Task Reassigned",
+                    $"Task '{task.ClientName}' was reassigned from {oldUser?.Name} to {newUser?.Name}.",
+                    task.Id,
+                    "TaskReassigned"
+                );
             await _hub.Clients.User(oldUser.Id.ToString())
                 .SendAsync("TaskReassigned", new
                 {
@@ -534,6 +462,7 @@ namespace Task_Manager_Care.Controllers
                 });
 
             await _context.SaveChangesAsync();
+            
 
             await _hub.Clients.User(dto.AssignedToId.ToString())
                 .SendAsync("TaskAssigned", new

@@ -90,13 +90,21 @@ namespace Task_Manager_Care.Controllers
             };
 
             // Create notification
+            // Decide who should receive notification
+            var notifyUserId = task.AssignedToId == userId
+                ? task.CreatedById
+                : task.AssignedToId;
+
+
+            // Create notification
             var notification = new Notification
             {
-                UserId = task.CreatedById,
+                UserId = notifyUserId,
                 TaskId = taskId,
                 Message = $"{user?.Name} commented on task '{task.ClientName}'",
                 CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
             };
+
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
