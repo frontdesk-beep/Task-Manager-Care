@@ -7,7 +7,7 @@ using Task_Manager_Care.Models;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")] // reports are admin-only — see security note below
+[Authorize(Roles = "Admin,SuperAdmin")] // reports are admin-only — see security note below
 public class TaskReportsController : ControllerBase
 {
     private readonly AppDbContext _context;

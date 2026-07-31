@@ -9,6 +9,7 @@ using Task_Manager_Care.DTOs;
 using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Models;
+using Task_Manager_Care.Services;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -20,19 +21,23 @@ namespace Task_Manager_Care.Controllers
         //ControllerBase - means this class contains the all task apis 
         private readonly AppDbContext _context;
         private readonly IHubContext<TaskHub> _hub;
+        private readonly NotificationService _notificationService;
 
         //_context - talks to sql server
         //_hub - talks to SignalR - live work
-        public TasksController(AppDbContext context, IHubContext<TaskHub> hub)
+        public TasksController(AppDbContext context, 
+            IHubContext<TaskHub> hub,
+            NotificationService notificationService)
         {
             _context = context;
-            _hub = hub;    
+            _hub = hub;
+            _notificationService = notificationService;
         }
 
         // GET /api/tasks?assignedToId=5&createdById=0
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetTasks(
-            [FromQuery] int? AssignedToId, 
+            [FromQuery] int? AssignedToId,
             [FromQuery] int? CreatedById,
             [FromQuery] bool activeOnly = false
             )
@@ -47,7 +52,7 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.CreatedBy)
                 .Include(t => t.Status)
                 .Include(t => t.PriorityNavigation)
-                .Include(t=> t.ServiceCategory)
+                .Include(t => t.ServiceCategory)
                 .AsQueryable();
             //Asqueryable means i am still building my query
             //if assignedtoid has value then add assignedtoid = value same for createdbyid
@@ -143,8 +148,8 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.PriorityNavigation)
                 .Include(t => t.ServiceCategory)
                 .FirstOrDefaultAsync(t => t.Id == id);
-            
-            if (task == null) 
+
+            if (task == null)
                 return NotFound();
 
             var result = new
@@ -220,31 +225,14 @@ namespace Task_Manager_Care.Controllers
             // create notification for assigned user
             if (task.AssignedToId != 0)
             {
-                var notification = new Notification
-                {
-                    UserId = task.AssignedToId,
-                    TaskId = task.Id,
-                    Message = $"Task '{task.ClientName}' assigned to you.",
-                    CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
-                };
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
-
-                // notify via SignalR: target user by NameIdentifier (user id string)
-                await _hub.Clients.User(task.AssignedToId.ToString())
-                          .SendAsync("TaskAssigned", new { taskId = task.Id, message = notification.Message });
+                await _notificationService.NotifyUser(
+                    task.AssignedToId,
+                    "Task Assigned",
+                    $"Task '{task.ClientName}' assigned to you.",
+                    task.Id,
+                    "TaskAssigned"
+                    );
             }
-
-            // also broadcast to creator
-            await _hub.Clients.User(task.CreatedById.ToString())
-                      .SendAsync("TaskCreated", new
-                      {
-                          task.Id,
-                          task.ClientName,
-                          task.StatusId,
-                          task.AssignedToId
-                      });
-
             return Ok(new
             {
                 task.Id,
@@ -260,6 +248,7 @@ namespace Task_Manager_Care.Controllers
                 task.DueDate,
                 task.Created_On
             });
+
         }
 
         [HttpPut("{id}")]
@@ -271,7 +260,7 @@ namespace Task_Manager_Care.Controllers
                 .Include(t => t.Status)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (existing == null) 
+            if (existing == null)
                 return NotFound();
 
             //save the old assignee
@@ -303,7 +292,7 @@ namespace Task_Manager_Care.Controllers
             {
                 existing.CompletedOn = null;
             }
-            //existing.AssignedToId = updated.AssignedToId;
+            existing.AssignedToId = updated.AssignedToId;
             existing.task_Description = updated.task_Description;
             existing.DueDate = updated.DueDate;
             existing.PriorityId = updated.PriorityId;
@@ -354,7 +343,7 @@ namespace Task_Manager_Care.Controllers
                     Description = $"Status changed from {oldStatusName} to {newStatusName}"
                 });
             }
-          
+
             if (oldPriority != updated.PriorityId)
             {
                 _context.TaskHistories.Add(new Activity
@@ -388,43 +377,21 @@ namespace Task_Manager_Care.Controllers
                     Description = $"Service changed from '{oldService}' to '{newService}'"
                 });
             }
-            // add notification for new assigned user
-            var note = new Notification
-            {
-                UserId = existing.AssignedToId,
-                TaskId = existing.Id,
-                Message = $"Task '{existing.ClientName}' updated. Status: {existing.StatusId}",
-                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)   
-            };
-            _context.Notifications.Add(note);
-
+            
             await _context.SaveChangesAsync();
-            // Broadcast with full details
-            var taskDetail = new
-            {
-                existing.Id,
-                existing.ClientName,
-                task_Description = existing.task_Description,
-                existing.AssignedToId,
-                assignedToName = existing.AssignedTo?.Name,
-                existing.CreatedById,
-                createdByName = existing.CreatedBy?.Name,
-                existing.StatusId,
-                statusName = existing.Status?.Name,
-                existing.DueDate
-            };
-
+            
 
             // broadcast to relevant users
-            await _hub.Clients.User(existing.AssignedToId.ToString())
-                .SendAsync("TaskUpdated", new
-                {
-                    existing.Id,
-                    existing.ClientName,
-                    existing.StatusId,
-                    existing.AssignedToId,
-                    existing.DueDate
-                });
+            // notify old assignee if task was reassigned
+            if (oldAssignedToId != updated.AssignedToId)
+            {
+                await _hub.Clients.User(oldAssignedToId.ToString())
+                    .SendAsync("TaskReassigned", new
+                    {
+                        taskId = existing.Id,
+                        message = $"Task '{existing.ClientName}' was reassigned."
+                    });
+            }
             return NoContent();
         }
 
@@ -473,15 +440,29 @@ namespace Task_Manager_Care.Controllers
                 });
             }
 
-            _context.Notifications.Add(new Notification
-            {
-                UserId = dto.AssignedToId,
-                TaskId = task.Id,
-                Message = $"Task '{task.ClientName}' has been assigned to you.",
-                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
-            });
+            await _notificationService.NotifyUser(
+                    dto.AssignedToId,
+                    "Task Assigned",
+                    $"Task '{task.ClientName}' has been assigned to you.",
+                    task.Id,
+                    "TaskAssigned"
+                );
+            await _notificationService.NotifyUser(
+                    task.CreatedById,
+                    "Task Reassigned",
+                    $"Task '{task.ClientName}' was reassigned from {oldUser?.Name} to {newUser?.Name}.",
+                    task.Id,
+                    "TaskReassigned"
+                );
+            await _hub.Clients.User(oldUser.Id.ToString())
+                .SendAsync("TaskReassigned", new
+                {
+                    task.Id,
+                    task.ClientName
+                });
 
             await _context.SaveChangesAsync();
+            
 
             await _hub.Clients.User(dto.AssignedToId.ToString())
                 .SendAsync("TaskAssigned", new
@@ -511,10 +492,41 @@ namespace Task_Manager_Care.Controllers
                 Description = $"Task '{t.ClientName}' deleted."
             });
 
+            var createdById = t.CreatedById;
+            var assignedToId = t.AssignedToId;
+            var clientName = t.ClientName;
+            var taskId = t.Id;
+
             _context.Tasks.Remove(t);
+
             await _context.SaveChangesAsync();
-            await _hub.Clients.All.SendAsync("TaskDeleted", new { taskId = id });
+            if (createdById == assignedToId)
+            {
+                await _hub.Clients.User(t.CreatedById.ToString())
+                .SendAsync("TaskDeleted", new
+                {
+                    taskId,
+                    message = $"Task '{clientName}' was deleted."
+                });
+            }
+            else
+            {
+                await _hub.Clients.User(createdById.ToString())
+                    .SendAsync("TaskDeleted", new
+                    {
+                        taskId,
+                        message = $"Task '{clientName}' was deleted."
+                    });
+                await _hub.Clients.User(assignedToId.ToString())
+                    .SendAsync("TaskDeleted", new
+                    {
+                        taskId,
+                        message = $"Task '{clientName}' was deleted."
+                    });
+               
+            }
             return NoContent();
         }
     }
 }
+    

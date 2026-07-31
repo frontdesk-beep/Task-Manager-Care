@@ -6,6 +6,8 @@ using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Services;
 using Task_Manager_Care.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using Task_Manager_Care.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 //for email reset link
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
 builder.Services.AddCors(options =>
 {
@@ -82,11 +87,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
-app.UseCors(policy => policy
-.AllowAnyOrigin()
-.AllowAnyMethod()
-.AllowAnyHeader()
-    );
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 

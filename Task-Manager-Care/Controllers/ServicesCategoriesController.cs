@@ -24,7 +24,7 @@ namespace Task_Manager_Care.Controllers
                 new { Id = 2, Name = "Insurance" },
                 new { Id = 3, Name = "TAX" },
                 new { Id = 4, Name = "Real Estate" },
-                new { Id = 5, Name = "Morgage" },
+                new { Id = 5, Name = "Mortgage" },
                 new { Id = 6, Name = "Travel Insurance" },
                 new { Id = 7, Name = "Financial Planning" },
                 new { Id = 8, Name = "Others" },
