@@ -232,6 +232,15 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     "TaskAssigned"
                     );
+                await _hub.Clients.All.SendAsync("TaskCreated", new
+                {
+                    task.Id,
+                    task.ClientName,
+                    task.AssignedToId,
+                    task.StatusId,
+                    task.PriorityId,
+                    task.DueDate
+                });
             }
             return Ok(new
             {
@@ -379,19 +388,19 @@ namespace Task_Manager_Care.Controllers
             }
             
             await _context.SaveChangesAsync();
-            
+
 
             // broadcast to relevant users
             // notify old assignee if task was reassigned
-            if (oldAssignedToId != updated.AssignedToId)
+            await _hub.Clients.All.SendAsync("TaskUpdated", new
             {
-                await _hub.Clients.User(oldAssignedToId.ToString())
-                    .SendAsync("TaskReassigned", new
-                    {
-                        taskId = existing.Id,
-                        message = $"Task '{existing.ClientName}' was reassigned."
-                    });
-            }
+                id = existing.Id,
+                clientName = existing.ClientName,
+                assignedToId = existing.AssignedToId,
+                statusId = existing.StatusId,
+                priorityId = existing.PriorityId,
+                dueDate = existing.DueDate
+            });
             return NoContent();
         }
 
@@ -470,7 +479,15 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     task.ClientName
                 });
-
+            await _hub.Clients.All.SendAsync("TaskUpdated", new
+            {
+                id = task.Id,
+                clientName = task.ClientName,
+                assignedToId = task.AssignedToId,
+                statusId = task.StatusId,
+                priorityId = task.PriorityId,
+                dueDate = task.DueDate
+            });
             return Ok();
         }
 
@@ -500,6 +517,10 @@ namespace Task_Manager_Care.Controllers
             _context.Tasks.Remove(t);
 
             await _context.SaveChangesAsync();
+            await _hub.Clients.All.SendAsync("TaskDeleted", new
+            {
+                taskId = taskId
+            });
             if (createdById == assignedToId)
             {
                 await _hub.Clients.User(t.CreatedById.ToString())

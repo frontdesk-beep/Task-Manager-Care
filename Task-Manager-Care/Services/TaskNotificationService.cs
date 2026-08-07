@@ -1,21 +1,19 @@
-﻿using Task_Manager_Care.Data;
-using Task_Manager_Care.Hubs;
+﻿using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Models;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services
 {
     public class TaskNotificationService
     {
-        private readonly AppDbContext _db;
         private readonly IHubContext<TaskHub> _hub;
 
-        public TaskNotificationService(AppDbContext db, IHubContext<TaskHub> hub)
+        public TaskNotificationService(
+            IHubContext<TaskHub> hub)
         {
-            _db = db;
             _hub = hub;
         }
+
 
         public async Task PublishTaskUpdatedAsync(TaskItem task)
         {
@@ -27,30 +25,46 @@ namespace Backend.Services
                 {
                     task.Id,
                     task.ClientName,
-                    task.task_Description,
-                    task.LongDescription,
                     task.AssignedToId,
                     task.CreatedById,
                     task.StatusId,
                     task.PriorityId,
-                    task.DueDate,
-                    task.Updated_On
+                    task.DueDate
                 }
             };
 
-            var recipients = new[] { task.AssignedToId, task.CreatedById }.Distinct();
+
+            var recipients = new[]
+            {
+                task.AssignedToId,
+                task.CreatedById
+            }
+            .Distinct();
+
+
             foreach (var userId in recipients)
             {
-                await _hub.Clients.Group($"user-{userId}").SendAsync("ReceiveTaskUpdate", payload);
+                await _hub.Clients
+                    .User(userId.ToString())
+                    .SendAsync(
+                        "ReceiveTaskUpdate",
+                        payload
+                    );
             }
         }
 
-        public async Task PublishCommentAddedAsync(TaskItem task, Remarks comment)
+
+
+        public async Task PublishCommentAddedAsync(
+            TaskItem task,
+            Remarks comment)
         {
+
             var commentPayload = new
             {
                 type = "comment-added",
                 taskId = task.Id,
+
                 comment = new
                 {
                     comment.Id,
@@ -62,13 +76,43 @@ namespace Backend.Services
                 }
             };
 
-            await _hub.Clients.Group($"task-{task.Id}").SendAsync("ReceiveComment", commentPayload);
 
-            var recipients = new[] { task.AssignedToId, task.CreatedById }.Distinct();
+            // send to users currently viewing this task
+            await _hub.Clients
+                .Group($"Task-{task.Id}")
+                .SendAsync(
+                    "ReceiveComment",
+                    commentPayload
+                );
+
+
+
+            // update task list for assigned/created users
+            var updatePayload = new
+            {
+                type = "comment-added",
+                taskId = task.Id
+            };
+
+
+            var recipients = new[]
+            {
+                task.AssignedToId,
+                task.CreatedById
+            }
+            .Distinct();
+
+
             foreach (var userId in recipients)
             {
-                await _hub.Clients.Group($"user-{userId}").SendAsync("ReceiveTaskUpdate", commentPayload);
+                await _hub.Clients
+                    .User(userId.ToString())
+                    .SendAsync(
+                        "ReceiveTaskUpdate",
+                        updatePayload
+                    );
             }
+
         }
     }
 }
