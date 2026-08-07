@@ -73,6 +73,8 @@ namespace Task_Manager_Care.Models
         public int PriorityId { get; set; } // Foreign key to Priority
         public Priority? PriorityNavigation { get; set; } // Navigation property to Priority
 
+        //to check which email sent last- to check evrday email is gonna sent.
+        public DateTime? LastOverdueEmailSentAt { get; set; }
         public List<Remarks>? Comments { get; set; } // Navigation property to Comments (one-to-many relationship)
     }
 }

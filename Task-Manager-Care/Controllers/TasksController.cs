@@ -22,16 +22,19 @@ namespace Task_Manager_Care.Controllers
         private readonly AppDbContext _context;
         private readonly IHubContext<TaskHub> _hub;
         private readonly NotificationService _notificationService;
+        private readonly IEmailService _emailService;
 
         //_context - talks to sql server
         //_hub - talks to SignalR - live work
         public TasksController(AppDbContext context, 
             IHubContext<TaskHub> hub,
-            NotificationService notificationService)
+            NotificationService notificationService,
+            IEmailService emailService)
         {
             _context = context;
             _hub = hub;
             _notificationService = notificationService;
+            _emailService = emailService;
         }
 
         // GET /api/tasks?assignedToId=5&createdById=0
@@ -232,6 +235,32 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     "TaskAssigned"
                     );
+
+                // for email sent to user for urgent tasks alert
+                var assignedUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == task.AssignedToId);
+                Console.WriteLine($"Created By: {task.CreatedById}");
+                Console.WriteLine($"Assigned To: {task.AssignedToId}");
+                Console.WriteLine($"Priority: {task.PriorityId}");
+                if ( task.PriorityId == 4 && assignedUser != null) // Assuming 4 is the ID for "Urgent" priority
+                {
+                    await _emailService.SendEmailAsync(
+                        assignedUser.Email,
+                        "Urgent Task Assigned",
+                        $@"
+                        <h2>Urgent Task Assigned</h2>
+                        <p> Hello {assignedUser.Name},</p>
+                        <p>A new urgent task has been assigned to you:</p>
+                        
+                        <p>
+                        <b>Client: </b> {task.ClientName}<br/>
+                        <b>Description: </b> {task.task_Description}<br/>
+                        <b>Due Date: </b> {task.DueDate:d}<br/>
+                        </p>
+                        
+                        <p>Please review it as soon as possible.</p>"
+                    );
+                }
                 await _hub.Clients.All.SendAsync("TaskCreated", new
                 {
                     task.Id,
