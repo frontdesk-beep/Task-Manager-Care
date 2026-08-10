@@ -20,8 +20,11 @@ namespace Task_Manager_Care.BackgroundServices
 
         private async Task DelayUntilNineAM(CancellationToken stoppingToken)
         {
-            var now = DateTime.Now;
+            /* FOR TESTING OVERDUE TASKS*/
+            //var delay = TimeSpan.FromSeconds(10);
+            //await Task.Delay(delay, stoppingToken);
 
+            var now = DateTime.Now;
             var nextRun = now.Date.AddHours(9); // Today 9:00 AM
 
             // If 9 AM already passed, schedule tomorrow 9 AM
@@ -31,6 +34,7 @@ namespace Task_Manager_Care.BackgroundServices
             }
 
             var delay = nextRun - now;
+            _logger.LogInformation("Next overdue-task check scheduled for {NextRun}", nextRun);
 
             await Task.Delay(delay, stoppingToken);
         }
@@ -39,14 +43,23 @@ namespace Task_Manager_Care.BackgroundServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                //WAIT UNTILL 9 AM FIRST
                 //in every 24 hours - calculates according to the secrver time 
                 //await Task.Delay(
                 //    TimeSpan.FromHours(24),
                 //    stoppingToken);
                 //for automatic everyday morning 9 am and second email next day morning 9 am - if the task is still not completed.
-                //await DelayUntilNineAM(stoppingToken);
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+
+                //WAIT UNTILL 9 AM (today or tomorrow), then run once per day
+
+                await DelayUntilNineAM(stoppingToken);
+
+                //skip weekends entirely, - don't even query the db
+                var today = DateTime.Now.DayOfWeek;
+                if(today == DayOfWeek.Saturday || today == DayOfWeek.Sunday)
+                {
+                    _logger.LogInformation("Skipping overdue check - weekend ({Day})", today);
+                    continue;
+                }
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -105,6 +118,7 @@ namespace Task_Manager_Care.BackgroundServices
                         }
                     }
                     await context.SaveChangesAsync();
+                    _logger.LogInformation("Overdue check complete. {Count} email(s) sent.", overdueTasks.Count);
 
                 }
 

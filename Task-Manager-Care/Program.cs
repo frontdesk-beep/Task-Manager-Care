@@ -23,7 +23,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 //Email Service
 builder.Services.AddScoped<IEmailService, EmailService>();
 //Overdue Task Email Checker
-//builder.Services.AddHostedService<OverdueTaskBackgroundService>();
+builder.Services.AddHostedService<OverdueTaskBackgroundService>();
 builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
