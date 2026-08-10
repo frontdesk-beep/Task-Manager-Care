@@ -8,6 +8,7 @@ using Task_Manager_Care.Services;
 using Task_Manager_Care.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Task_Manager_Care.Helpers;
+using Task_Manager_Care.BackgroundServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +20,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //builder.Services.AddScoped<TaskNotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-//for email reset link
+//Email Service
 builder.Services.AddScoped<IEmailService, EmailService>();
+//Overdue Task Email Checker
+builder.Services.AddHostedService<OverdueTaskBackgroundService>();
 builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
