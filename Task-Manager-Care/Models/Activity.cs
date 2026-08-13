@@ -1,4 +1,6 @@
-﻿namespace Task_Manager_Care.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Task_Manager_Care.Models
 {
     public class Activity
     {

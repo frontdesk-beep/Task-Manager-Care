@@ -37,7 +37,7 @@ namespace Task_Manager_Care.Models
         public User? AssignedTo { get; set; } // Navigation property to User
 
         [Required]
-        [DataType(DataType.DateTime)]
+        [DataType(DataType.Date)]
         [JsonPropertyName("createdOn")]
         public DateTime Created_On { get; set; } // Date and time when the task was created
         public DateTime? Updated_On { get; set; } // Date and time when the task was last updated (nullable for new tasks)

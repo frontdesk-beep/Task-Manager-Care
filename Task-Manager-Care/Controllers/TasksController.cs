@@ -182,6 +182,7 @@ namespace Task_Manager_Care.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask(TaskItem task)
         {
+            task.Created_On = DateTimeHelper.ToEastern(DateTime.UtcNow);
             if (task.ClientId != null)
             {
                 var client = await _context.Clients
@@ -203,7 +204,7 @@ namespace Task_Manager_Care.Controllers
                     ClientCategoryId = task.ClientCategoryId,
                     PhoneNumber = task.PhoneNumber,
                     Email = task.Email,
-                    CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                    CreatedOn = task.Created_On,
                     CreatedById = task.CreatedById
                 };
 
@@ -215,12 +216,13 @@ namespace Task_Manager_Care.Controllers
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
+            //use the same time stamp for the activity
             _context.TaskHistories.Add(new Activity
             {
                 TaskId = task.Id,
                 ChangedById = task.CreatedById,
                 Action = "Created",
-                ChangedAt = DateTimeHelper.ToEastern(DateTime.UtcNow),
+                ChangedAt = task.Created_On,
                 Description = $"Task '{task.ClientName}' created."
             });
             await _context.SaveChangesAsync();   // Saves the history record

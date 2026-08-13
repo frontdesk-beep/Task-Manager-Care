@@ -76,6 +76,7 @@ namespace Task_Manager_Care.BackgroundServices
                         .Include(t => t.ServiceCategory)
                         .Where(t =>
                             t.DueDate.Date < DateTime.Today &&
+                            t.Status.Name != "Cancelled" &&
                             t.Status.Name != "Completed" &&
                             (
                                 t.LastOverdueEmailSentAt == null ||
@@ -84,7 +85,7 @@ namespace Task_Manager_Care.BackgroundServices
                         )
                         .ToListAsync();
 
-
+                    int emailcount = 0;
                     foreach (var task in overdueTasks)
                     {
                         if (task.AssignedTo != null)
@@ -115,10 +116,11 @@ namespace Task_Manager_Care.BackgroundServices
                                 "
                             );
                             task.LastOverdueEmailSentAt = DateTime.Now;
+                            emailcount++;
                         }
                     }
                     await context.SaveChangesAsync();
-                    _logger.LogInformation("Overdue check complete. {Count} email(s) sent.", overdueTasks.Count);
+                    _logger.LogInformation("Overdue check complete. {Count} email(s) sent.", emailcount);
 
                 }
 

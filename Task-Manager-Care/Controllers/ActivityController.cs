@@ -25,7 +25,7 @@ namespace Task_Manager_Care.Controllers
                     x.Id,
                     x.Action,
                     x.Description,
-                    ChangedAt = DateTimeHelper.ToEastern(x.ChangedAt),
+                    ChangedAt = x.ChangedAt,
                     ChangedBy = x.ChangedBy.Name
         })
         .ToListAsync();
