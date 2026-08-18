@@ -10,15 +10,19 @@ namespace Task_Manager_Care.Models
         [StringLength(100)]
         public string ClientName { get; set; } = string.Empty!;
 
+        [Range(1, int.MaxValue, ErrorMessage = "ClientCategoryId must be greater than 0.")]
         public int ClientCategoryId { get; set; }
         public ClientCategory? ClientCategory { get; set; }
 
         [StringLength(100)]
         public string? CompanyName { get; set; }
 
-        [StringLength(100)]
+        [Required(ErrorMessage = "Phone number is required.")]
+        [StringLength(15)]
+        [Phone]
         public string? PhoneNumber { get; set; }
 
+        [Required(ErrorMessage ="Email is required.")]
         [EmailAddress]
         public string? Email { get; set; }
         [StringLength(50)]

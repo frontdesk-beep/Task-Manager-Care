@@ -182,6 +182,10 @@ namespace Task_Manager_Care.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask(TaskItem task)
         {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             task.Created_On = DateTimeHelper.ToEastern(DateTime.UtcNow);
             if (task.ClientId != null)
             {
@@ -294,6 +298,10 @@ namespace Task_Manager_Care.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, TaskItem updated)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var existing = await _context.Tasks
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)

@@ -20,6 +20,7 @@ namespace Task_Manager_Care.Models
         //2 Categories: "New Client" and "Existing Client".
         //This helps in categorizing tasks based on the client's status, allowing for tailored approaches in task management and client interactions.
         //Navigation property - EF Core to load
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid Client Category.")]
         public int ClientCategoryId { get; set; } // Foreign key to ClientCategory
         public ClientCategory? ClientCategory { get; set; }
 
@@ -32,7 +33,7 @@ namespace Task_Manager_Care.Models
         [EmailAddress]
         public string? Email { get; set; }
 
-        [Required]
+        [Range(1, int.MaxValue, ErrorMessage="Please assign this task to someone. ")]
         public int AssignedToId { get; set; } // User assigned to the task (Employee's name or ID)
         public User? AssignedTo { get; set; } // Navigation property to User
 
@@ -43,6 +44,8 @@ namespace Task_Manager_Care.Models
         public DateTime? Updated_On { get; set; } // Date and time when the task was last updated (nullable for new tasks)
 
         public DateTime? CompletedOn { get; set; } // Date and time when the task was completed (nullable for tasks not yet completed)
+        
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid Status.")]
         public int StatusId { get; set; } // "Pending", "In Progress", "Completed"
         //Navigation property - EF Core to load
         public Status? Status { get; set; } // Navigation property to Status
@@ -63,13 +66,14 @@ namespace Task_Manager_Care.Models
 
         //these 3 of them are for the service category, which is a foreign key to the ServiceCategory model,
         //allowing us to categorize tasks based on the type of service they are related to.
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid Service Category.")]
         public int ServiceCategoryId { get; set; } // Foreign key to ServiceCategory
 
         //Navigation property - EF Core to load - ? - for accepting nullable values also
         public ServiceCategory? ServiceCategory { get; set; } // Navigation property to ServiceCategory
 
         //Priorities
-        [Required]
+        [Range(1, int.MaxValue, ErrorMessage ="Please select a priority.")]
         public int PriorityId { get; set; } // Foreign key to Priority
         public Priority? PriorityNavigation { get; set; } // Navigation property to Priority
 

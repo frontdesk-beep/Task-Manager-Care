@@ -107,10 +107,22 @@ namespace Task_Manager_Care.Controllers
         //    return Ok(clients);
         //}
         [HttpPost]
-        public async Task<IActionResult> CreateClient(Client client)
+        public async Task<IActionResult> CreateClient(CreateClientDto dto)
         {
-            client.CreatedOn = DateTime.UtcNow;
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+        var client = new Client
+    {
+        ClientName = dto.ClientName,
+        ClientCategoryId = dto.ClientCategoryId,
+        CompanyName = dto.CompanyName,
+        PhoneNumber = dto.PhoneNumber,
+        Email = dto.Email,
+        Address = dto.Address,
+        CreatedById = dto.CreatedById,
+        CreatedOn = DateTime.UtcNow
+    };
             _context.Clients.Add(client);
 
             await _context.SaveChangesAsync();

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Task_Manager_Care.Validation;
 
 namespace Task_Manager_Care.DTOs
 {
@@ -11,17 +12,18 @@ namespace Task_Manager_Care.DTOs
 
             //Name
             [Required(ErrorMessage = "Name is required.")]
-            [StringLength(100, MinimumLength = 3,
-                ErrorMessage = "Name must be between 3 and 100 characters.")]
-            [RegularExpression(@"^[a-zA-Z\s]+$",
-                ErrorMessage = "Name can only contain letters and spaces.")]
+            [StringLength(50, MinimumLength = 2,
+                ErrorMessage = "Name must be between 2 and 50 characters.")]
+            [RegularExpression(@"^[A-Za-z]+(?:[\s'-][A-Za-z]+)*$",
+                ErrorMessage = "Name can only contain letters, spaces, hyphens and apostrophes.")]
             public string Name { get; set; }
 
             //Email
             [Required(ErrorMessage = "Email is required.")]
             [EmailAddress(ErrorMessage = "Invalid Email Format.")]
             [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
-            //[RegularExpression(@"[A-Za-z0-9._%+-]+@careinsurance.ca")]
+            [RegularExpression(@"^[A-Za-z0-9._%+-]+@careinsurance\.ca$",
+            ErrorMessage ="Email must end with @careinsurance.ca")]
             public string Email { get; set; }
 
             //Password
@@ -36,14 +38,13 @@ namespace Task_Manager_Care.DTOs
 
             //Role
             [Required(ErrorMessage = "Role is required.")]
-            //[RegularExpression(@"^(Admin|Employee)$",
-            //    ErrorMessage = "Role must be either 'Admin' or 'Employee'.")]
             [StringLength(20)]
             public string Role { get; set; } // "Admin" or "Employee"
 
             //Created Date 
             [Required(ErrorMessage = "Created Date is required.")]
             [DataType(DataType.Date)]
+            [NotInFuture(ErrorMessage="JoiningDate cannot be in the future.")]
             public DateTime CreatedAt { get; set; }
 
             [DataType(DataType.Date)]
