@@ -186,6 +186,7 @@ namespace Task_Manager_Care.Controllers
             {
                 return BadRequest(ModelState);
             }
+            task.CreatedById = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
             task.Created_On = DateTimeHelper.ToEastern(DateTime.UtcNow);
             if (task.ClientId != null)
             {
@@ -245,9 +246,6 @@ namespace Task_Manager_Care.Controllers
                 // for email sent to user for urgent tasks alert
                 var assignedUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Id == task.AssignedToId);
-                Console.WriteLine($"Created By: {task.CreatedById}");
-                Console.WriteLine($"Assigned To: {task.AssignedToId}");
-                Console.WriteLine($"Priority: {task.PriorityId}");
                 if ( task.PriorityId == 4 && assignedUser != null) // Assuming 4 is the ID for "Urgent" priority
                 {
                     await _emailService.SendEmailAsync(
@@ -502,13 +500,24 @@ namespace Task_Manager_Care.Controllers
                     task.Id,
                     "TaskReassigned"
                 );
-            await _hub.Clients.User(oldUser.Id.ToString())
-                .SendAsync("TaskReassigned", new
-                {
+             await _notificationService.NotifyUser(
+                    oldUser.Id,
+                    "Task Reassigned",
+                    $"Task '{task.ClientName}' was reassigned from you to {newUser?.Name}.",
                     task.Id,
-                    task.ClientName
-                });
+                    "TaskReassigned"
+                );
 
+            if (oldUser != null)
+            {
+
+                await _hub.Clients.User(oldUser.Id.ToString())
+                    .SendAsync("TaskReassigned", new
+                    {
+                        task.Id,
+                        task.ClientName
+                    });
+            }
             await _context.SaveChangesAsync();
             
 

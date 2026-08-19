@@ -10,6 +10,7 @@ using Task_Manager_Care.DTOs;
 using Task_Manager_Care.Models;
 using Task_Manager_Care.Services;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -161,11 +162,9 @@ namespace Task_Manager_Care.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
         {
-            Console.WriteLine($"Received Token: '{request.Token}'");
 
             var user = _context.Users.FirstOrDefault(x =>
                 x.PasswordResetToken == request.Token);
-            Console.WriteLine(user == null ? "User NOT found" : "User found");
             if (user == null)
                 return BadRequest("Invalid token");
 
@@ -187,8 +186,13 @@ namespace Task_Manager_Care.Controllers
             });
         }
         [HttpGet("profile/{id}")]
+        [Authorize]
         public IActionResult GetProfile(int id)
         {
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserId != id && currentRole != "Admin" && currentRole != "SuperAdmin")
+                return Forbid();
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
             if (user == null) 
                 return NotFound(new 
@@ -199,6 +203,10 @@ namespace Task_Manager_Care.Controllers
         [HttpPut("profile/{id}")]
         public IActionResult UpdateProfile(int id, UpdateProfileRequestDto request)
         {
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserId != id && currentRole != "Admin" && currentRole != "SuperAdmin")
+                return Forbid();
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
             if (user == null) return NotFound(new { message = "User not found." });
 

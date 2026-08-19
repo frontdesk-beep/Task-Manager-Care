@@ -29,7 +29,9 @@ namespace Task_Manager_Care.Controllers
         public async Task<IActionResult> GetUsers(
             [FromQuery] EmployeeQueryDto query)
         {
-            var users = _context.Users.AsQueryable();
+            var users = _context.Users
+                .Where(u=>u.Role != "SuperAdmin")
+                .AsQueryable();
 
             //search by name or email
             if (!string.IsNullOrWhiteSpace(query.Search))
@@ -41,12 +43,14 @@ namespace Task_Manager_Care.Controllers
             //filter by active status
             if(query.IsActive.HasValue)
             {
-                users = users.Where(u => u.IsActive == query.IsActive.Value);
+                users = users.Where(u => 
+                u.IsActive == query.IsActive.Value);
             }
             //filter by role
             if(!string.IsNullOrWhiteSpace(query.Role))
             {
-                users = users.Where(u => u.Role == query.Role);
+                users = users.Where(u => 
+                u.Role == query.Role);
             }
             switch(query.SortBy?.ToLower())
             {
@@ -147,6 +151,10 @@ namespace Task_Manager_Care.Controllers
             {
                 return NotFound();
             }
+            if (existing.Role == "SuperAdmin")
+            {
+                return Forbid();
+            }
 
             existing.Name = dto.Name;
             existing.Email = dto.Email;
@@ -175,7 +183,10 @@ namespace Task_Manager_Care.Controllers
             {
                 return NotFound();
             }
-
+            if (user.Role == "SuperAdmin")
+            {
+                return Forbid();
+            }
             // Check incomplete tasks
             var incompleteTasks = await _context.Tasks
                 .Where(t =>
@@ -211,12 +222,17 @@ namespace Task_Manager_Care.Controllers
     } 
     
         [HttpPut("reactivate/{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> ReactivateUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 return NotFound();
+            }
+            if (user.Role == "SuperAdmin")
+            {
+                return Forbid();
             }
             user.IsActive = true;
             await _context.SaveChangesAsync();
