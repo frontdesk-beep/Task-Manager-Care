@@ -7,8 +7,8 @@ namespace Task_Manager_Care.DTOs
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid Email Format.")]
         [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
-        [RegularExpression(@"[A-Za-z0-9._%+-]+@careinsurance.ca")]
-        public string Email { get; set; }
-
+        [RegularExpression(@"^[A-Za-z0-9._%+-]+@careinsurance\.ca$",
+            ErrorMessage = "Email must be a valid email address ending with @careinsurance.ca")]
+        public string Email { get; set; } = string.Empty;
     }
 }

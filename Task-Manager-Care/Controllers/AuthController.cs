@@ -16,14 +16,14 @@ namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly PasswordHasher<User> _hasher = new PasswordHasher<User>();
         private readonly IEmailService _emailService;
-        public AuthController(AppDbContext context, 
+
+        public AuthController(AppDbContext context,
             IConfiguration configuration,
             IEmailService emailService)
         {
@@ -31,6 +31,8 @@ namespace Task_Manager_Care.Controllers
             _configuration = configuration;
             _emailService = emailService;
         }
+
+        private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
         private string GenerateToken(User user)
         {
@@ -55,52 +57,41 @@ namespace Task_Manager_Care.Controllers
         }
 
         //[HttpPost("register")]
-        //public async Task<IActionResult> Register(RegisterRequestDto request)
-        //{
-        //    if (_context.Users.Any(x => x.Email == request.Email))
-        //        return BadRequest(new { message = "Email already exists" });
-
-        //    var user = new User
-        //    {
-        //        Name = request.Name,
-        //        Email = request.Email,
-        //        Role = "Employee",
-        //        CreatedAt = DateTime.UtcNow
-        //    };
-
-        //    user.Password = _hasher.HashPassword(user, request.Password);
-
-        //    _context.Users.Add(user);
-        //    await _context.SaveChangesAsync();
-        //    return Ok(new { message = "Registration successful" });
-        //}
+        //public async Task<IActionResult> Register(RegisterRequestDto request) { ... }
 
         [HttpPost("login")]
         public IActionResult Login(LoginDto request)
         {
-            var user = _context.Users
-                .FirstOrDefault(x => x.Email == request.Email);
+            var email = NormalizeEmail(request.Email);
+            var user = _context.Users.FirstOrDefault(x => x.Email == email);
 
+            // Same generic message whether the user doesn't exist or the password is
+            // wrong — avoids leaking which emails are registered (account enumeration).
             if (user == null)
-            {
-                return Unauthorized(new
-                { message = "User not found."
-                });
-            }
-            if(!user.IsActive)
+                return Unauthorized(new { message = "Invalid email or password." });
+
+            if (!user.IsActive)
             {
                 return StatusCode(403, new
-                { 
-                    message = "User account has been deactivated.Please contact an administrator"
+                {
+                    message = "User account has been deactivated. Please contact an administrator."
                 });
             }
-            // Verify password. Handle legacy/plain-text stored passwords by catching
-            // FormatException thrown when the stored value isn't in the expected hashed format.
+
             bool passwordValid = false;
             try
             {
                 var verify = _hasher.VerifyHashedPassword(user, user.Password, request.Password);
-                passwordValid = verify == PasswordVerificationResult.Success;
+
+                // Treat both Success and SuccessRehashNeeded as valid logins — otherwise
+                // correct passwords get rejected the moment hasher defaults change.
+                passwordValid = verify != PasswordVerificationResult.Failed;
+
+                if (verify == PasswordVerificationResult.SuccessRehashNeeded)
+                {
+                    user.Password = _hasher.HashPassword(user, request.Password);
+                    _context.SaveChanges();
+                }
             }
             catch (FormatException)
             {
@@ -114,7 +105,7 @@ namespace Task_Manager_Care.Controllers
             }
 
             if (!passwordValid)
-                return Unauthorized(new { message = "Invalid password." });
+                return Unauthorized(new { message = "Invalid email or password." });
 
             var token = GenerateToken(user);
             return Ok(new
@@ -131,60 +122,50 @@ namespace Task_Manager_Care.Controllers
         public async Task<IActionResult> Password(ForgotPasswordRequestDto request)
         {
             var frontendUrl = _configuration["AppSettings:FrontendUrl"];
+            var email = NormalizeEmail(request.Email);
+            var user = _context.Users.FirstOrDefault(x => x.Email == email);
 
-            var user = _context.Users.
-                FirstOrDefault(x => x.Email == request.Email);
+            // Generic response for both "no such user" and "deactivated user" —
+            // don't let this endpoint reveal which emails are registered.
+            if (user == null || !user.IsActive)
+                return Ok(new { message = "If that account exists, a password reset link has been sent." });
 
-            if (user == null)
-                return Ok();
-
-            if (!user.IsActive)
-                return BadRequest(new
-                {
-                    message = "Account is deactivated. Please contact an administrator."
-                });
             user.PasswordResetToken = Guid.NewGuid().ToString();
             user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
             await _context.SaveChangesAsync();
-            var resetLink =
-                 $"{frontendUrl}/reset-password?token={user.PasswordResetToken}";
+
+            var resetLink = $"{frontendUrl}/reset-password?token={user.PasswordResetToken}";
             var body =
                 $@"<p>
                 Click the link below to reset your password:
                 </p>
                 <p><a href='{resetLink}'>Reset Password</a></p>
                 <p>This link expires in one hour.</p>";
-            await _emailService.SendEmailAsync(user.Email,
-                "Reset Password",
-                body);
-            return Ok(new { message = "Password reset link sent to your email." });
+
+            await _emailService.SendEmailAsync(user.Email, "Reset Password", body);
+
+            return Ok(new { message = "If that account exists, a password reset link has been sent." });
         }
+
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDto request)
         {
-
-            var user = _context.Users.FirstOrDefault(x =>
-                x.PasswordResetToken == request.Token);
+            var user = _context.Users.FirstOrDefault(x => x.PasswordResetToken == request.Token);
             if (user == null)
-                return BadRequest("Invalid token");
+                return BadRequest(new { message = "Invalid token." });
 
             if (user.PasswordResetTokenExpiry < DateTime.UtcNow)
-                return BadRequest("Token expired");
+                return BadRequest(new { message = "Token expired." });
 
-            user.Password =
-                _hasher.HashPassword(user, request.NewPassword);
-
+            user.Password = _hasher.HashPassword(user, request.NewPassword);
             user.PasswordResetToken = null;
-
             user.PasswordResetTokenExpiry = null;
 
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "Password reset successfully."
-            });
+            return Ok(new { message = "Password reset successfully." });
         }
+
         [HttpGet("profile/{id}")]
         [Authorize]
         public IActionResult GetProfile(int id)
@@ -193,32 +174,41 @@ namespace Task_Manager_Care.Controllers
             var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
             if (currentUserId != id && currentRole != "Admin" && currentRole != "SuperAdmin")
                 return Forbid();
+
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
-            if (user == null) 
-                return NotFound(new 
-                { message = "User not found." });
+            if (user == null)
+                return NotFound(new { message = "User not found." });
+
             return Ok(new { id = user.Id, name = user.Name, email = user.Email, role = user.Role });
         }
 
         [HttpPut("profile/{id}")]
+        [Authorize]
         public IActionResult UpdateProfile(int id, UpdateProfileRequestDto request)
         {
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
             if (currentUserId != id && currentRole != "Admin" && currentRole != "SuperAdmin")
                 return Forbid();
+
             var user = _context.Users.FirstOrDefault(x => x.Id == id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            if (user == null)
+                return NotFound(new { message = "User not found." });
 
             user.Name = request.Name;
-            
+
             if (!string.IsNullOrEmpty(request.NewPassword))
             {
                 bool currentMatches = false;
                 try
                 {
                     var verify = _hasher.VerifyHashedPassword(user, user.Password, request.CurrentPassword ?? "");
-                    currentMatches = verify == PasswordVerificationResult.Success;
+                    currentMatches = verify != PasswordVerificationResult.Failed;
+
+                    if (verify == PasswordVerificationResult.SuccessRehashNeeded)
+                    {
+                        user.Password = _hasher.HashPassword(user, request.CurrentPassword ?? "");
+                    }
                 }
                 catch (FormatException)
                 {
@@ -230,7 +220,8 @@ namespace Task_Manager_Care.Controllers
 
                 user.Password = _hasher.HashPassword(user, request.NewPassword);
             }
-        _context.SaveChanges();
+
+            _context.SaveChanges();
             return Ok(new { message = "Profile updated successfully." });
         }
     }

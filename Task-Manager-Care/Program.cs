@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Task_Manager_Care.Hubs;
-using Task_Manager_Care.Data;
-using Task_Manager_Care.Services;
-using Task_Manager_Care.Interfaces;
-using Microsoft.AspNetCore.SignalR;
-using Task_Manager_Care.Helpers;
 using Task_Manager_Care.BackgroundServices;
+using Task_Manager_Care.Data;
+using Task_Manager_Care.Helpers;
+using Task_Manager_Care.Hubs;
+using Task_Manager_Care.Interfaces;
+using Task_Manager_Care.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +28,18 @@ builder.Services.AddHostedService<OverdueTaskBackgroundService>();
 builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var firstError = context.ModelState
+            .Values.SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .FirstOrDefault() ?? "Invalid request.";
 
+        return new BadRequestObjectResult(new { message = firstError });
+    };
+});
 var allowedOrigins = builder.Configuration
         .GetSection("AllowedOrigins")
         .Get<string[]>() ?? new[] { "http://localhost:4200" };
