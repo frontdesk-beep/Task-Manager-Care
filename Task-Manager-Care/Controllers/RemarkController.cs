@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
 using Task_Manager_Care.Controllers;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Hubs;
 using Task_Manager_Care.Models;
-using Microsoft.AspNetCore.Authorization;
-using Task_Manager_Care.Helpers;
+using Task_Manager_Care.Services;
 
 namespace Task_Manager_Care.Controllers
 {
@@ -19,11 +21,16 @@ namespace Task_Manager_Care.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<TaskHub> _hub;
+        private readonly NotificationService _notificationService;
+        private readonly TaskNotificationService _taskNotificationService;
 
-        public RemarkController(AppDbContext context, IHubContext<TaskHub> hub)
+        public RemarkController(AppDbContext context, IHubContext<TaskHub> hub, NotificationService notificationService,
+    TaskNotificationService taskNotificationService)
         {
             _context = context;
             _hub = hub;
+            _notificationService = notificationService;
+            _taskNotificationService = taskNotificationService;
         }
 
         [HttpGet]
@@ -95,22 +102,18 @@ namespace Task_Manager_Care.Controllers
                 ? task.CreatedById
                 : task.AssignedToId;
 
+            // saves to DB AND pushes "ReceiveNotification" live to the bell
+            await _notificationService.NotifyUser(
+                notifyUserId,
+                "New Comment",
+                $"{user?.Name} commented on task '{task.ClientName}'",
+                taskId,
+                "NewComment"
+            );
+            comment.User = user; // Attach user to comment for broadcasting
 
-            // Create notification
-            var notification = new Notification
-            {
-                UserId = notifyUserId,
-                TaskId = taskId,
-                Message = $"{user?.Name} commented on task '{task.ClientName}'",
-                CreatedOn = DateTimeHelper.ToEastern(DateTime.UtcNow)
-            };
-
-            _context.Notifications.Add(notification);
-            await _context.SaveChangesAsync();
-
-            // Broadcast to subscribed clients
-            await _hub.Clients.Group($"task-{taskId}").SendAsync("CommentAdded", result);
-
+            // pushes "ReceiveComment" live to everyone viewing this task (correct event + group casing)
+            await _taskNotificationService.PublishCommentAddedAsync(task, comment);
             return CreatedAtAction(nameof(GetComments), new { taskId }, result);
         }
 
