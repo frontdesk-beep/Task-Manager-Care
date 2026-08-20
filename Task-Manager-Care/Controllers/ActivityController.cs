@@ -2,11 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.Data;
 using Task_Manager_Care.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ActivityController : ControllerBase
     {
         //ACTIVITY TAB

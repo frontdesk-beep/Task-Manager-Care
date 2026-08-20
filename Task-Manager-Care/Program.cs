@@ -45,7 +45,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 var allowedOrigins = builder.Configuration
-        .GetSection("AllowedOrigins")
+        .GetSection("Cors:AllowedOrigins")
         .Get<string[]>() ?? new[] { "http://localhost:4200" };
 
 builder.Services.AddCors(options =>

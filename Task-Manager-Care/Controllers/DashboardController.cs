@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Task_Manager_Care.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Task_Manager_Care.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class DashboardController : ControllerBase
     { 
         private readonly IDashboardService _dashboardService;
