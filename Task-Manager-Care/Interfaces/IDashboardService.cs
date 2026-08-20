@@ -9,6 +9,5 @@ namespace Task_Manager_Care.Interfaces
         Task<DashboardSummaryDto> GetMySummary(int userId);
         Task<List<RecentTaskDto>> GetRecentTasks();
         Task<List<NotificationDto>> GetNotifications(int userId);
-        Task<TaskChartDto> GetTaskChart();
     }
 }

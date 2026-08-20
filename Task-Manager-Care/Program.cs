@@ -59,9 +59,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add SignalR
-//builder.Services.AddSignalR();
-
 // JWT Auth
 var jwtKey = builder.Configuration["JWT:Key"];
 var jwtIssuer = builder.Configuration["JWT:Issuer"];

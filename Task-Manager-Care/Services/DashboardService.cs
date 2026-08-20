@@ -148,10 +148,5 @@ namespace Task_Manager_Care.Services
                 })
                 .ToListAsync();
         }
-
-        public Task<TaskChartDto> GetTaskChart()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

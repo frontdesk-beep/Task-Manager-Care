@@ -56,9 +56,7 @@ namespace Task_Manager_Care.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        //[HttpPost("register")]
-        //public async Task<IActionResult> Register(RegisterRequestDto request) { ... }
-
+        
         [HttpPost("login")]
         public IActionResult Login(LoginDto request)
         {
