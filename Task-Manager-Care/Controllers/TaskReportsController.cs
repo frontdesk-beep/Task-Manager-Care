@@ -53,7 +53,7 @@ public class TaskReportsController : ControllerBase
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
+        var rows = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new
@@ -63,9 +63,18 @@ public class TaskReportsController : ControllerBase
                 StatusName = t.Status.Name,
                 CreatedByName = t.CreatedBy.Name,
                 AssignedToName = t.AssignedTo.Name,
-                CompletedOn = DateTimeHelper.ToEastern(t.CompletedOn!.Value)
+                CompletedOn = t.CompletedOn!.Value
             })
             .ToListAsync();
+        var items = rows.Select(r => new
+        {
+            r.Id,
+            r.ClientName,
+            r.StatusName,
+            r.CreatedByName,
+            r.AssignedToName,
+            CompletedOn = DateTimeHelper.ToEastern(r.CompletedOn)
+        });
 
         return Ok(new { totalCount, page, pageSize, items });
     }

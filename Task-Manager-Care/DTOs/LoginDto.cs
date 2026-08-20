@@ -2,20 +2,25 @@
 
 namespace Task_Manager_Care.DTOs
 {
-    public class LoginDto
+    public class LoginDto : IValidatableObject
     {
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid Email Format.")]
         [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
-        [RegularExpression(@"[A-Za-z0-9._%+-]+@careinsurance.ca")]
-        public string Email { get; set; }
-        
+        public string Email { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Password is required.")]
-        [StringLength(100, MinimumLength = 8,
-        ErrorMessage = "Password must be at least 8 characters.")]
-        [RegularExpression(
-        @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$",
-        ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext context)
+        {
+            if (!string.IsNullOrEmpty(Email) &&
+                !Email.Trim().EndsWith("@careinsurance.ca", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new ValidationResult(
+                    "Email must be a valid email address ending with @careinsurance.ca",
+                    new[] { nameof(Email) });
+            }
+        }
     }
 }

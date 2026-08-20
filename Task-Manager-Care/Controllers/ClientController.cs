@@ -3,11 +3,13 @@ using Task_Manager_Care.Data;
 using Task_Manager_Care.Models;
 using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Task_Manager_Care.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ClientController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -120,7 +122,7 @@ namespace Task_Manager_Care.Controllers
         PhoneNumber = dto.PhoneNumber,
         Email = dto.Email,
         Address = dto.Address,
-        CreatedById = dto.CreatedById,
+        CreatedById= int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value),
         CreatedOn = DateTime.UtcNow
     };
             _context.Clients.Add(client);

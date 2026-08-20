@@ -88,7 +88,7 @@ namespace Task_Manager_Care.Data
                 .HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.TaskItem)
                 .WithMany()

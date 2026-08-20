@@ -32,8 +32,10 @@ namespace Task_Manager_Care.Controllers
         [HttpPost("{id}/mark-read")]
         public async Task<IActionResult> MarkRead(int id)
         {
+            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
             var n = await _context.Notifications.FindAsync(id);
             if (n == null) return NotFound();
+            if (n.UserId != userId) return Forbid();
             n.IsRead = true;
             await _context.SaveChangesAsync();
             return Ok(new {success = true});

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Task_Manager_Care.Data;
+using Task_Manager_Care.Helpers;
 using Task_Manager_Care.Services;
 
 namespace Task_Manager_Care.BackgroundServices
@@ -24,18 +25,14 @@ namespace Task_Manager_Care.BackgroundServices
             //var delay = TimeSpan.FromSeconds(10);
             //await Task.Delay(delay, stoppingToken);
 
-            var now = DateTime.Now;
-            var nextRun = now.Date.AddHours(9); // Today 9:00 AM
+            var nowEastern = DateTimeHelper.ToEastern(DateTime.UtcNow);
+            var nextRunEastern = nowEastern.Date.AddHours(9);
 
-            // If 9 AM already passed, schedule tomorrow 9 AM
-            if (now >= nextRun)
-            {
-                nextRun = nextRun.AddDays(1);
-            }
+            if (nowEastern >= nextRunEastern)
+                nextRunEastern = nextRunEastern.AddDays(1);
 
-            var delay = nextRun - now;
-            _logger.LogInformation("Next overdue-task check scheduled for {NextRun}", nextRun);
-
+            var delay = nextRunEastern - nowEastern;
+            _logger.LogInformation("Next overdue-task check scheduled for {NextRun} Eastern", nextRunEastern);
             await Task.Delay(delay, stoppingToken);
         }
         protected override async Task ExecuteAsync(
@@ -54,7 +51,7 @@ namespace Task_Manager_Care.BackgroundServices
                 await DelayUntilNineAM(stoppingToken);
 
                 //skip weekends entirely, - don't even query the db
-                var today = DateTime.Now.DayOfWeek;
+                var today = DateTimeHelper.ToEastern(DateTime.UtcNow).DayOfWeek;
                 if(today == DayOfWeek.Saturday || today == DayOfWeek.Sunday)
                 {
                     _logger.LogInformation("Skipping overdue check - weekend ({Day})", today);
