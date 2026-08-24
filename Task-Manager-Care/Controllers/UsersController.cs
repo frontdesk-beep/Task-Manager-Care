@@ -183,7 +183,13 @@ namespace Task_Manager_Care.Controllers
             {
                 return NotFound();
             }
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
             if (user.Role == "SuperAdmin")
+            {
+                return Forbid();
+            }
+            // Admins can only deactivate Employees
+            if (currentRole == "Admin" && user.Role != "Employee")
             {
                 return Forbid();
             }
