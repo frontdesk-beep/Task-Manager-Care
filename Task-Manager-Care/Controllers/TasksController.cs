@@ -538,6 +538,263 @@ namespace Task_Manager_Care.Controllers
             });
             return Ok();
         }
+        //task-history
+        [HttpGet("history/assigned")]
+        public async Task<IActionResult> GetAssignedTaskHistory(
+    [FromQuery] int userId,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 5,
+    [FromQuery] string? search = null,
+    [FromQuery] int? createdById = null,
+    [FromQuery] string? sortBy = null,
+    [FromQuery] string? sortDirection = "asc")
+        {
+            if (page < 1)
+                page = 1;
+
+            if (pageSize < 1)
+                pageSize = 5;
+
+            // Start query
+            var query = _context.Tasks
+                .AsNoTracking()
+                .Where(t =>
+                    t.AssignedToId == userId &&
+                    t.Status.Name == "Completed");
+
+            // -----------------------------
+            // SEARCH CLIENT NAME
+            // -----------------------------
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(t =>
+                    t.ClientName.Contains(search));
+            }
+
+            // -----------------------------
+            // FILTER CREATED BY
+            // -----------------------------
+
+            if (createdById.HasValue)
+            {
+                query = query.Where(t =>
+                    t.CreatedById == createdById.Value);
+            }
+
+            // -----------------------------
+            // SORTING
+            // -----------------------------
+
+            query = sortBy?.ToLower() switch
+            {
+                "createdbyname" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.CreatedBy.Name)
+                        : query.OrderBy(t => t.CreatedBy.Name),
+
+                "clientname" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.ClientName)
+                        : query.OrderBy(t => t.ClientName),
+
+                "task_description" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.task_Description)
+                        : query.OrderBy(t => t.task_Description),
+
+                "duedate" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.DueDate)
+                        : query.OrderBy(t => t.DueDate),
+
+                _ =>
+                    query.OrderByDescending(t => t.Id)
+            };
+
+            // -----------------------------
+            // TOTAL COUNT
+            // -----------------------------
+
+            var totalCount = await query.CountAsync();
+
+            // -----------------------------
+            // PAGINATION
+            // -----------------------------
+
+            var tasks = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.ClientName,
+                    task_Description = t.task_Description,
+
+                    t.AssignedToId,
+                    assignedToName = t.AssignedTo != null
+                        ? t.AssignedTo.Name
+                        : null,
+
+                    t.CreatedById,
+                    createdByName = t.CreatedBy != null
+                        ? t.CreatedBy.Name
+                        : null,
+
+                    t.StatusId,
+                    statusName = t.Status != null
+                        ? t.Status.Name
+                        : null,
+
+                    t.DueDate,
+                    t.Created_On,
+                    t.PhoneNumber,
+                    t.Email,
+
+                    t.ClientCategoryId,
+                    t.ServiceCategoryId,
+                    t.PriorityId
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                data = tasks,
+                totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(
+                    totalCount / (double)pageSize)
+            });
+        }
+        [HttpGet("history/created")]
+        public async Task<IActionResult> GetCreatedTaskHistory(
+    [FromQuery] int userId,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 5,
+    [FromQuery] string? search = null,
+    [FromQuery] int? createdById = null,
+    [FromQuery] string? sortBy = null,
+    [FromQuery] string? sortDirection = "asc")
+        {
+            if (page < 1)
+                page = 1;
+
+            if (pageSize < 1)
+                pageSize = 5;
+
+            // Start query
+            var query = _context.Tasks
+                .AsNoTracking()
+                .Where(t =>
+                    t.CreatedById == userId &&
+                    t.Status.Name == "Completed");
+
+            // -----------------------------
+            // SEARCH CLIENT NAME
+            // -----------------------------
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(t =>
+                    t.ClientName.Contains(search));
+            }
+
+            // -----------------------------
+            // FILTER CREATED BY
+            // -----------------------------
+
+            if (createdById.HasValue)
+            {
+                query = query.Where(t =>
+                    t.CreatedById == createdById.Value);
+            }
+
+            // -----------------------------
+            // SORTING
+            // -----------------------------
+
+            query = sortBy?.ToLower() switch
+            {
+                "createdbyname" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.CreatedBy.Name)
+                        : query.OrderBy(t => t.CreatedBy.Name),
+
+                "clientname" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.ClientName)
+                        : query.OrderBy(t => t.ClientName),
+
+                "task_description" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.task_Description)
+                        : query.OrderBy(t => t.task_Description),
+
+                "duedate" =>
+                    sortDirection == "desc"
+                        ? query.OrderByDescending(t => t.DueDate)
+                        : query.OrderBy(t => t.DueDate),
+
+                _ =>
+                    query.OrderByDescending(t => t.Id)
+            };
+
+            // -----------------------------
+            // TOTAL COUNT
+            // -----------------------------
+
+            var totalCount = await query.CountAsync();
+
+            // -----------------------------
+            // PAGINATION
+            // -----------------------------
+
+            var tasks = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.ClientName,
+                    task_Description = t.task_Description,
+
+                    t.AssignedToId,
+                    assignedToName = t.AssignedTo != null
+                        ? t.AssignedTo.Name
+                        : null,
+
+                    t.CreatedById,
+                    createdByName = t.CreatedBy != null
+                        ? t.CreatedBy.Name
+                        : null,
+
+                    t.StatusId,
+                    statusName = t.Status != null
+                        ? t.Status.Name
+                        : null,
+
+                    t.DueDate,
+                    t.Created_On,
+                    t.PhoneNumber,
+                    t.Email,
+
+                    t.ClientCategoryId,
+                    t.ServiceCategoryId,
+                    t.PriorityId
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                data = tasks,
+                totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(
+                    totalCount / (double)pageSize)
+            });
+        }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
